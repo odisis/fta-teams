@@ -369,8 +369,10 @@ end
 function Group:TryInviteMember(playerId, groupId, memberId)  
   local groupData = self.groups[groupId]
 
-  if #groupData.members >= groupData.membersLimit then 
-    return false
+  if groupData.membersLimit then
+    if #groupData.members >= groupData.membersLimit then 
+      return false
+    end
   end
 
   local playerRole = Player:GetPlayerRole(groupId, playerId)
@@ -551,11 +553,19 @@ function Group:GetPlayerGroupById(playerId)
 end
 
 AddEventHandler('Connect', function(Passport, source, bool)
+  while not __isAuth__ do
+    Citizen.Wait(1000)
+  end
+
   Group:UpdateLastTime(Passport)
 end)
 
 CreateThread(function()
   Wait(1000)
+
+  while not __isAuth__ do
+    Citizen.Wait(1000)
+  end
 
   local consultGroups = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups`')
 

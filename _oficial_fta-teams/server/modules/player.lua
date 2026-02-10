@@ -23,9 +23,7 @@ function Player:Get(groupId, playerId)
 end
 
 function Player:GetName(playerId)
-  local playerIdentity = vRP.Identity(playerId)
-  
-  return playerIdentity.name ..' '.. playerIdentity.name2
+  return vRP.UserName(tonumber(playerId))
 end
 
 function Player:MemberFormat(groupId, playerId, roleId)

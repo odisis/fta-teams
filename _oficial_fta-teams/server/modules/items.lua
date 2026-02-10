@@ -85,6 +85,10 @@ end
 CreateThread(function()
   Wait(1000)
 
+  while not __isAuth__ do
+    Citizen.Wait(1000)
+  end
+
   Items:SetupVehicles()
   Wait(500)
   Items:SetupItems()
@@ -95,6 +99,10 @@ end)
 RegisterNetEvent('fta-teams:setupItems', function()
   local playerSource = source
   
+  while not __isAuth__ do
+    Citizen.Wait(1000)
+  end
+
   CreateThread(function()
     TriggerClientEvent('fta-teams:setup:vehicles', playerSource, Items.vehicles)
     TriggerClientEvent('fta-teams:setup:items', playerSource, Items.items)

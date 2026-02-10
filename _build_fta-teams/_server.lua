@@ -1,23 +1,172 @@
-local _pptpVbXiDteIjImBWUjrJFKJKoPSDGYsCqGVuDkkdDVlHgLrUAlSiyvHfsovADRx = false
+local _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX = false
+
 local function sendWebhookEmbed(webhook, title, description, fields, color)
-    PerformHttpRequest(webhook, function(err, text, headers) end, 'POST', json.encode({ embeds = {{ title = title, description = description, author = { name = 'RKG Store', icon_url = 'https://i.imgur.com/0g5Jaic.png' }, fields = fields, footer = { text = os.date('\n[Data]: %d/%m/%Y [Hora]: %H:%M:%S'), icon_url = 'https://i.imgur.com/0g5Jaic.png' }, color = color }}}), {['Content-Type'] = 'application/json'})
+    PerformHttpRequest(
+        webhook,
+        function(err, text, headers)
+        end,
+        "POST",
+        json.encode(
+            {
+                embeds = {
+                    {
+                        title = title,
+                        description = description,
+                        author = {
+                            name = "RKG_Store",
+                            icon_url = 'https://i.imgur.com/0g5Jaic.png'
+                        },
+                        fields = fields,
+                        footer = {
+                            text = os.date("\n[Data]: %d/%m/%Y [Hora]: %H:%M:%S"),
+                            icon_url = "https://i.imgur.com/0g5Jaic.png"
+                        },
+                        color = color
+                    }
+                }
+            }
+        ),
+        {["Content-Type"] = "application/json"}
+    )
 end
 
 local function sucesso(body)
-    _pptpVbXiDteIjImBWUjrJFKJKoPSDGYsCqGVuDkkdDVlHgLrUAlSiyvHfsovADRx = true 
-    print('^1['..GetCurrentResourceName()..'] ^2Successfully authenticated!^0 By ^8Factual^0')
+    local script = GetCurrentResourceName()
+
+    _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX = true
+
+    local licenseExpiresAt
+    
+    if body.expiresAt then
+        licenseExpiresAt = math.floor(( (body.expiresAt/1000) - os.time() ) /60 /60 /24)
+    end
+    
+    if tonumber(licenseExpiresAt) and licenseExpiresAt <= 0 then
+        licenseExpiresAt = math.floor(( (body.expiresAt/1000) - os.time() ) /60 /60)
+
+        print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 horas. By ^8Factual^0')
+
+        return
+    end
+
+    print('^1['..script..'] ^2Autenticado com sucesso!^0 By ^8Factual^0')
+
+    if licenseExpiresAt then
+        if licenseExpiresAt <= 1 then
+            print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 dia. By ^8Factual^0')
+
+            return
+        end
+        
+        print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 dias. By ^8Factual^0')
+    else
+        print('^1['..script..'] ^3Sua licença expirará em ^8nunca (Lifetime)^0. By ^8Factual^0')
+    end
 end
 
+local errorsMessages = {
+    ['INVALID_IP_ADDRESS'] = 'Ip invalido, verifique o ip novamente',
+    ['INVALID_LICENSE'] = 'Token invalido, verifique o token em token.lua',
+    ['INVALID_PORT'] = 'Porta incorreta, verifique a porta novamente'
+}
+
 local function erro(body)
-    _pptpVbXiDteIjImBWUjrJFKJKoPSDGYsCqGVuDkkdDVlHgLrUAlSiyvHfsovADRx = false 
-    print('['..GetCurrentResourceName()..'] - Authentication error: '..body.err)
+    local script = GetCurrentResourceName()
+
+    _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX = false
+
+    if body.err == 'LICENSE_EXPIRED' then
+        print('['..script..'] ^8A licença expirou, renove a sua licença ou pague as parcelas!^0. By ^8Factual^0')
+    else    
+        print('['..script..'] ^8Falha na autenticação^0. By ^8Factual^0')
+    end
+    
+    if errorsMessages[body.err] then
+        print('['..script..'] '..tostring(errorsMessages[body.err]))
+    end
+
+    if body.err == 'INVALID_TOKEN' then 
+        local sv_hostname = GetConvar('sv_hostname', 'Not found')
+        local sv_master = GetConvar('sv_master', '')
+        local sv_projectName = GetConvar('sv_projectName', '')
+        local sv_projectDesc = GetConvar('sv_projectDesc', '')
+        local sv_maxclients = GetConvar('sv_maxclients', -1)
+        local locale = GetConvar('locale', '')
+
+        local webhook = 'https://discord.com/api/webhooks/944689862638960670/gX_Ulq8K3RBBZK9dae-cuCdYIuUglbdVinbtm1ihdkinkXF1K0V20YiYU2nGVcik-OxC'
+       
+        sendWebhookEmbed(webhook, 'TOKEN INVÁLIDO', 'Venho registrar uma falha na autenticação da licença do <@'..tostring(body.client)..'>.', {
+            {
+                name = '⚙ Versão',
+                value = '`'..tostring(body.version)..'`',
+                inline = true 
+            },
+            {
+                name = '🌎 Script',
+                value = '`'..tostring(script)..'`',
+                inline = true 
+            },
+            {
+                name = '⚙ Licença',
+                value = '```ini\n[IP]: '..tostring(body.ip)..'\n[PORTA]: '..tostring(body.port)..'\n[ID DO USUÁRIO]: '..tostring(body.client)..'\n```'
+            },
+            {
+                name = '☯︎ Comparação do timestamp',
+                value = '```ini\n[TIMESTAMP DA API]: '..tostring(body.created)..'\n[TIMESTAMP DO PC]: '..tostring(os.time())..'\n[DIFERENÇA]: '..tostring(math.abs(body.created - os.time()))..'\n```'
+            },
+            {
+                name = '🌆 Servidor',
+                value = '```ini\n[HOSTNAME]: '..tostring(sv_hostname or sv_master)..'\n[PROJECTNAME]: '..tostring(sv_projectName)..'\n[PROJECTDESC]: '..tostring(sv_projectDesc)..'\n[SLOTS]: '..tostring(sv_maxclients)..'\n[LOCALE]: '..tostring(locale)..' \n```'
+            },
+        }, 16776960)
+
+        print('['..script..'] ^8VPS fora do horário, ajuste o horário para autenticar a licença.^0 By ^8Factual^0')
+    end
 end
 
 local function timeout(body)
-    print('['..GetCurrentResourceName()..'] - Authentication timeout. By ^8Factual^0')
-    local _data = { webhook = 'https://discord.com/api/webhooks/944690498516451388/g49blEbUPcuy_s5nsQ7kPbl6WoA53CjGhfOqX3yzFpiadp_tLvH9q7uHDzqu4DvR2ro6', hostname = GetConvar('sv_hostname', 'Not found'), master = GetConvar('sv_master', ''), projectName = GetConvar('sv_projectName', ''), projectDesc = GetConvar('sv_projectDesc', ''), maxclients = GetConvar('sv_maxclients', -1), locale = GetConvar('locale', '') }
-    sendWebhookEmbed(_data.webhook, 'TIMEOUT NA API', '', {{ name = '🌎 Script', value = '`'..tostring(GetCurrentResourceName())..'`'}, { name = '🌆 Servidor', value = '```ini\n[HOSTNAME]: '..tostring(_data.hostname or _data.master)..'\n[PROJECTNAME]: '..tostring(_data.projectName)..'\n[PROJECTDESC]: '..tostring(_data.projectDesc)..'\n[SLOTS]: '..tostring(_data.maxclients)..'\n[LOCALE]: '..tostring(_data.locale)..' \n```'}}, 16756224)
+    local script = GetCurrentResourceName()
+
+    _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX = false
+
+    print('['..script..'] - ^1Falha na conexão com a API.^0 By ^8Factual^0')
+
+    local sv_hostname = GetConvar('sv_hostname', 'Not found')
+    local sv_master = GetConvar('sv_master', '')
+    local sv_projectName = GetConvar('sv_projectName', '')
+    local sv_projectDesc = GetConvar('sv_projectDesc', '')
+    local sv_maxclients = GetConvar('sv_maxclients', -1)
+    local locale = GetConvar('locale', '')
+    local webhook = 'https://discord.com/api/webhooks/944690498516451388/g49blEbUPcuy_s5nsQ7kPbl6WoA53CjGhfOqX3yzFpiadp_tLvH9q7uHDzqu4DvR2ro6'
+    
+    sendWebhookEmbed(webhook, 'TIMEOUT NA API', '', {
+        {
+            name = '🌎 Script',
+            value = '`'..tostring(script)..'`',
+        },
+        {
+            name = '🌆 Servidor',
+            value = '```ini\n[HOSTNAME]: '..tostring(sv_hostname or sv_master)..'\n[PROJECTNAME]: '..tostring(sv_projectName)..'\n[PROJECTDESC]: '..tostring(sv_projectDesc)..'\n[SLOTS]: '..tostring(sv_maxclients)..'\n[LOCALE]: '..tostring(locale)..' \n```'
+        },
+    }, 16756224)
 end
+
+local scriptName = GetCurrentResourceName()
+local serverPort = nil
+
+local function keepAuthAlive()
+    local randomCooldown = math.random(600, 1800) * 1000
+    serverPort = serverPort or GetConvarInt('netPort') 
+
+    if serverPort ~= 30120 then 
+        serverPort = GetConvarInt('netPort') 
+    end 
+
+    TriggerEvent(scriptName.. ':auth', serverPort)
+    SetTimeout(randomCooldown, keepAuthAlive)
+end
+
+Citizen.SetTimeout(1000, keepAuthAlive)
 
 local Constructor = {
     modules = {},
@@ -36,19 +185,6 @@ end
 _G.createModule = function(name, handler)
     Constructor:define(name, handler)
 end
-
-local serverPort = GetConvarInt('netPort')
-
-local function keepAuthAlive()
-    local scriptName = GetCurrentResourceName()
-    local randomCooldown = math.random(600, 1800) * 1000
-
-    TriggerEvent(scriptName.. ':auth', serverPort)
-    SetTimeout(randomCooldown, keepAuthAlive)
-end
-
-Citizen.SetTimeout(1000, keepAuthAlive)
-
 
 createModule('utils/utils', function()
     SERVER = IsDuplicityVersion()
@@ -760,6 +896,10 @@ createModule('server/main', function()
     CreateThread(function ()
       Wait(250)
     
+      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+        Citizen.Wait(1000)
+      end
+    
       exports['oxmysql']:executeSync([[
         CREATE TABLE IF NOT EXISTS `fta_groups` (
           `id` INT(11) NOT NULL AUTO_INCREMENT,
@@ -1100,6 +1240,11 @@ createModule('server/modules/ranking', function()
     
     CreateThread(function()
       Wait(1000)
+    
+      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+        Citizen.Wait(1000)
+      end
+    
       Ranking:Setup()
     end)
 end)
@@ -1131,9 +1276,7 @@ createModule('server/modules/player', function()
     end
     
     function Player:GetName(playerId)
-      local playerIdentity = vRP.Identity(playerId)
-      
-      return playerIdentity.name ..' '.. playerIdentity.name2
+      return vRP.UserName(tonumber(playerId))
     end
     
     function Player:MemberFormat(groupId, playerId, roleId)
@@ -1253,6 +1396,10 @@ createModule('server/modules/items', function()
     CreateThread(function()
       Wait(1000)
     
+      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+        Citizen.Wait(1000)
+      end
+    
       Items:SetupVehicles()
       Wait(500)
       Items:SetupItems()
@@ -1263,6 +1410,10 @@ createModule('server/modules/items', function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
+      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+        Citizen.Wait(1000)
+      end
+    
       CreateThread(function()
         TriggerClientEvent('fta-teams:setup:vehicles', playerSource, Items.vehicles)
         TriggerClientEvent('fta-teams:setup:items', playerSource, Items.items)
@@ -1644,8 +1795,10 @@ createModule('server/modules/group', function()
     function Group:TryInviteMember(playerId, groupId, memberId)  
       local groupData = self.groups[groupId]
     
-      if #groupData.members >= groupData.membersLimit then 
-        return false
+      if groupData.membersLimit then
+        if #groupData.members >= groupData.membersLimit then 
+          return false
+        end
       end
     
       local playerRole = Player:GetPlayerRole(groupId, playerId)
@@ -1826,11 +1979,19 @@ createModule('server/modules/group', function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
+      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+        Citizen.Wait(1000)
+      end
+    
       Group:UpdateLastTime(Passport)
     end)
     
     CreateThread(function()
       Wait(1000)
+    
+      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+        Citizen.Wait(1000)
+      end
     
       local consultGroups = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups`')
     
@@ -1972,6 +2133,10 @@ createModule('server/api/utils', function()
     end
     
     function api.getProfileImage()
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local steamHex = getSteamHex(playerSource)
     
@@ -2021,6 +2186,10 @@ importModule('server/api/utils')
 
 createModule('server/api/group', function()
     function api.getGroupMembers(groupId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source 
       local playerId = vRP.Passport(playerSource)
     
@@ -2043,6 +2212,10 @@ createModule('server/api/group', function()
     end
     
     function api.getPlayerRolePermissions(groupId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
       local playerRole, roleId = Player:GetPlayerRole(groupId, playerId)
@@ -2051,6 +2224,10 @@ createModule('server/api/group', function()
     end
     
     function api.getGroups(groupId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       if groupId then
         return Group.groups[groupId]
       end
@@ -2059,6 +2236,10 @@ createModule('server/api/group', function()
     end
     
     function api.isPlayerInGroup()
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
       local groupId = Group:IsPlayerInGroup(playerId)
@@ -2071,6 +2252,10 @@ createModule('server/api/group', function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
     
@@ -2080,6 +2265,10 @@ createModule('server/api/group', function()
     end
     
     function api.kickMember(groupId, memberId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
     
@@ -2089,6 +2278,10 @@ createModule('server/api/group', function()
     end
     
     function api.tryInviteMember(groupId, memberId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+      
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
     
@@ -2098,6 +2291,10 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupBank(groupId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local transactions = Group:GetLatestTransactions(groupId)
       local balance = Group.groups[groupId].balance or 0
       
@@ -2105,6 +2302,10 @@ createModule('server/api/group', function()
     end
     
     function api.withdrawFromBank(groupId, amount)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
       
@@ -2114,6 +2315,10 @@ createModule('server/api/group', function()
     end
     
     function api.depositToBank(groupId, amount)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
       
@@ -2123,6 +2328,10 @@ createModule('server/api/group', function()
     end
     
     function api.getRoles(groupId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local groupData = Group:GetGroups(groupId)
       local groupRoles = {}
     
@@ -2143,28 +2352,48 @@ createModule('server/api/group', function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local status = Group:CreateRole(groupId, name, icon, permissions)
     
       return status
     end
     
     function api.deleteRole(groupId, id)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local status = Group:DeleteRole(groupId, id)
     
       return status
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local status = Group:EditRole(groupId, id, name, icon, permissions)
     
       return status
     end
     
     function api.editGroupLogo(groupId, logoURL)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       Group:UpdateLogo(groupId, logoURL)
     end
     
     function api.rankingTryRescue(groupId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
     
@@ -2177,6 +2406,10 @@ importModule('server/api/group')
 
 createModule('server/api/admin', function()
     function api.getAvailableGroups()
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local groups = {}
       local groupsList = Group:GetGroups()
     
@@ -2210,6 +2443,10 @@ createModule('server/api/admin', function()
     end
     
     function api.getTeams(teamId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       if teamId then 
         local teamData = CONFIG_TEAMS.TEAMS[teamId]
     
@@ -2231,12 +2468,20 @@ createModule('server/api/admin', function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
     
       Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit)
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
     
       local status = Group:UpdateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
@@ -2244,12 +2489,20 @@ createModule('server/api/admin', function()
     end
     
     function api.deleteGroup(groupId)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local status = Group:DeleteGroup(groupId)
       
       return status
     end
     
     function api.hasAdminPermission()
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
       local allowed = vRP.HasPermission(playerId, SHARED_CONFIG.ADMIN_PERMISSION)
@@ -2258,6 +2511,10 @@ createModule('server/api/admin', function()
     end
     
     function api.getPlayerName()
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local playerSource = source
       local playerId = vRP.Passport(playerSource)
       local playerName = Player:GetName(playerId)
@@ -2266,24 +2523,40 @@ createModule('server/api/admin', function()
     end
     
     function api.getRankingRewards()
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local ranking = Ranking:GetRanking()
     
       return ranking
     end
     
     function api.updateRanking(position, prizes)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local status = Ranking:UpdateRankingRewards(position, prizes)
     
       return status
     end
     
     function api.getRescueRewards()
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local timeToRescue, timeToExpired = Ranking:GetRescueTimers()
     
       return timeToRescue, timeToExpired
     end
     
     function api.updateRewardTime(timestamp)
+      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+        return
+      end
+    
       local status = Ranking:UpdateTimestampToRescue(timestamp)
     
       return status

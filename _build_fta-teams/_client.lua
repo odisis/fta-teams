@@ -1135,4 +1135,3 @@ createModule('client/web/admin', function()
     end)
 end)
 importModule('client/web/admin')
-

@@ -1,4 +1,8 @@
 function api.getGroupMembers(groupId)
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source 
   local playerId = vRP.Passport(playerSource)
 
@@ -21,6 +25,10 @@ function api.getGroupMembers(groupId)
 end
 
 function api.getPlayerRolePermissions(groupId)
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
   local playerRole, roleId = Player:GetPlayerRole(groupId, playerId)
@@ -29,6 +37,10 @@ function api.getPlayerRolePermissions(groupId)
 end
 
 function api.getGroups(groupId)
+  if not __isAuth__ then
+    return
+  end
+
   if groupId then
     return Group.groups[groupId]
   end
@@ -37,6 +49,10 @@ function api.getGroups(groupId)
 end
 
 function api.isPlayerInGroup()
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
   local groupId = Group:IsPlayerInGroup(playerId)
@@ -49,6 +65,10 @@ function api.isPlayerInGroup()
 end
 
 function api.updateMemberRole(groupId, memberId, roleId)
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
 
@@ -58,6 +78,10 @@ function api.updateMemberRole(groupId, memberId, roleId)
 end
 
 function api.kickMember(groupId, memberId)
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
 
@@ -67,6 +91,10 @@ function api.kickMember(groupId, memberId)
 end
 
 function api.tryInviteMember(groupId, memberId)
+  if not __isAuth__ then
+    return
+  end
+  
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
 
@@ -76,6 +104,10 @@ function api.tryInviteMember(groupId, memberId)
 end
 
 function api.getGroupBank(groupId)
+  if not __isAuth__ then
+    return
+  end
+
   local transactions = Group:GetLatestTransactions(groupId)
   local balance = Group.groups[groupId].balance or 0
   
@@ -83,6 +115,10 @@ function api.getGroupBank(groupId)
 end
 
 function api.withdrawFromBank(groupId, amount)
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
   
@@ -92,6 +128,10 @@ function api.withdrawFromBank(groupId, amount)
 end
 
 function api.depositToBank(groupId, amount)
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
   
@@ -101,6 +141,10 @@ function api.depositToBank(groupId, amount)
 end
 
 function api.getRoles(groupId)
+  if not __isAuth__ then
+    return
+  end
+
   local groupData = Group:GetGroups(groupId)
   local groupRoles = {}
 
@@ -121,28 +165,48 @@ function api.getRoles(groupId)
 end
 
 function api.createRole(groupId, name, icon, permissions)
+  if not __isAuth__ then
+    return
+  end
+
   local status = Group:CreateRole(groupId, name, icon, permissions)
 
   return status
 end
 
 function api.deleteRole(groupId, id)
+  if not __isAuth__ then
+    return
+  end
+
   local status = Group:DeleteRole(groupId, id)
 
   return status
 end
 
 function api.editRole(groupId, id, name, icon, permissions)
+  if not __isAuth__ then
+    return
+  end
+
   local status = Group:EditRole(groupId, id, name, icon, permissions)
 
   return status
 end
 
 function api.editGroupLogo(groupId, logoURL)
+  if not __isAuth__ then
+    return
+  end
+
   Group:UpdateLogo(groupId, logoURL)
 end
 
 function api.rankingTryRescue(groupId)
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
 

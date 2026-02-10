@@ -19,6 +19,10 @@ end
 CreateThread(function ()
   Wait(250)
 
+  while not __isAuth__ do
+    Citizen.Wait(1000)
+  end
+
   exports['oxmysql']:executeSync([[
     CREATE TABLE IF NOT EXISTS `fta_groups` (
       `id` INT(11) NOT NULL AUTO_INCREMENT,

@@ -253,5 +253,10 @@ end
 
 CreateThread(function()
   Wait(1000)
+
+  while not __isAuth__ do
+    Citizen.Wait(1000)
+  end
+
   Ranking:Setup()
 end)

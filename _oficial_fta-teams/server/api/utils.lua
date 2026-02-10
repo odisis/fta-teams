@@ -72,6 +72,10 @@ local function getSteamHex(playerSource)
 end
 
 function api.getProfileImage()
+  if not __isAuth__ then
+    return
+  end
+
   local playerSource = source
   local steamHex = getSteamHex(playerSource)
 
