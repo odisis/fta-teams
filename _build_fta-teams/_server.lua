@@ -1,4 +1,4 @@
-local _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX = false
+local _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
@@ -33,7 +33,7 @@ end
 local function sucesso(body)
     local script = GetCurrentResourceName()
 
-    _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX = true
+    _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa = true
 
     local licenseExpiresAt
     
@@ -44,23 +44,23 @@ local function sucesso(body)
     if tonumber(licenseExpiresAt) and licenseExpiresAt <= 0 then
         licenseExpiresAt = math.floor(( (body.expiresAt/1000) - os.time() ) /60 /60)
 
-        print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 horas. By ^8Factual^0')
+        print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 horas. By ^5https://dsc.gg/rkgstore^0')
 
         return
     end
 
-    print('^1['..script..'] ^2Autenticado com sucesso!^0 By ^8Factual^0')
+    print('^1['..script..'] ^2Autenticado com sucesso!^0 By ^5https://dsc.gg/rkgstore^0')
 
     if licenseExpiresAt then
         if licenseExpiresAt <= 1 then
-            print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 dia. By ^8Factual^0')
+            print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 dia. By ^5https://dsc.gg/rkgstore^0')
 
             return
         end
         
-        print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 dias. By ^8Factual^0')
+        print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 dias. By ^5https://dsc.gg/rkgstore^0')
     else
-        print('^1['..script..'] ^3Sua licença expirará em ^8nunca (Lifetime)^0. By ^8Factual^0')
+        print('^1['..script..'] ^3Sua licença expirará em nunca ^2(Lifetime)^0. By ^5https://dsc.gg/rkgstore^0')
     end
 end
 
@@ -73,12 +73,12 @@ local errorsMessages = {
 local function erro(body)
     local script = GetCurrentResourceName()
 
-    _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX = false
+    _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa = false
 
     if body.err == 'LICENSE_EXPIRED' then
-        print('['..script..'] ^8A licença expirou, renove a sua licença ou pague as parcelas!^0. By ^8Factual^0')
+        print('['..script..'] ^8A licença expirou, renove a sua licença ou pague as parcelas!^0. By ^5https://dsc.gg/rkgstore^0')
     else    
-        print('['..script..'] ^8Falha na autenticação^0. By ^8Factual^0')
+        print('['..script..'] ^8Falha na autenticação^0. By ^5https://dsc.gg/rkgstore^0')
     end
     
     if errorsMessages[body.err] then
@@ -120,16 +120,16 @@ local function erro(body)
             },
         }, 16776960)
 
-        print('['..script..'] ^8VPS fora do horário, ajuste o horário para autenticar a licença.^0 By ^8Factual^0')
+        print('['..script..'] ^8VPS fora do horário, ajuste o horário para autenticar a licença.^0 By ^5https://dsc.gg/rkgstore^0')
     end
 end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
 
-    _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX = false
+    _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa = false
 
-    print('['..script..'] - ^1Falha na conexão com a API.^0 By ^8Factual^0')
+    print('['..script..'] - ^1Falha na conexão com a API.^0 By ^5https://dsc.gg/rkgstore^0')
 
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
@@ -896,7 +896,7 @@ createModule('server/main', function()
     CreateThread(function ()
       Wait(250)
     
-      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
         Citizen.Wait(1000)
       end
     
@@ -1241,7 +1241,7 @@ createModule('server/modules/ranking', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
         Citizen.Wait(1000)
       end
     
@@ -1254,11 +1254,15 @@ createModule('server/modules/player', function()
     _G.Player = {}
     
     function Player:GetPlayerRole(groupId, playerId)
-      local groupData = Group:GetGroups(groupId)
+      local group = Group:GetGroups(groupId)
     
-      for _, MEMBER in ipairs(groupData.members) do 
+      if not group then
+        return false
+      end
+    
+      for _, MEMBER in ipairs(group.members) do 
         if MEMBER.playerId == playerId then
-          return groupData.roles[MEMBER.roleId], MEMBER.roleId
+          return group.roles[MEMBER.roleId], MEMBER.roleId
         end
       end
     
@@ -1267,6 +1271,10 @@ createModule('server/modules/player', function()
     
     function Player:Get(groupId, playerId)
       local groupMembers = Group:GetGroupMembers(groupId)
+    
+      if not groupMembers then
+        return nil
+      end
       
       for _, MEMBER in ipairs(groupMembers) do 
         if MEMBER.playerId == playerId then 
@@ -1396,7 +1404,7 @@ createModule('server/modules/items', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
         Citizen.Wait(1000)
       end
     
@@ -1410,7 +1418,7 @@ createModule('server/modules/items', function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
         Citizen.Wait(1000)
       end
     
@@ -1437,20 +1445,36 @@ createModule('server/modules/group', function()
     end
     
     function Group:GetGroupRoles(groupId)
-      return self.groups[groupId].roles
+      local group = self.groups[groupId]
+    
+      if not group then
+        return nil
+      end
+    
+      return group.roles
     end
     
     function Group:GetGroupMembers(groupId)
-      return self.groups[groupId].members
+      local group = self.groups[groupId]
+    
+      if not group then
+        return nil
+      end
+    
+      return group.members
     end
     
     function Group:UpdateMemberRescue(groupId, playerId, rescueWave) 
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
+    
+      if not group then
+        return
+      end
       
-      for INDEX, MEMBER in ipairs(groupData.members) do 
+      for INDEX, MEMBER in ipairs(group.members) do 
         if MEMBER.playerId == playerId then
-          self.groups[groupId].members[INDEX].rescueReward = 1
-          self.groups[groupId].members[INDEX].rescueWave = rescueWave
+          group.members[INDEX].rescueReward = 1
+          group.members[INDEX].rescueWave = rescueWave
           exports['oxmysql']:executeSync('UPDATE `fta_groups_members` SET `rescue_rewards` = ? WHERE `group` = ? AND `player_id` = ?', { 1, groupId, playerId })
           return
         end
@@ -1559,54 +1583,60 @@ createModule('server/modules/group', function()
     function Group:UpdateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
       local teamData = CONFIG_TEAMS.TEAMS[teamId]
     
-      if teamData then 
-        local groupData = self.groups[groupId]
-      
-        local newGroup = {
-          id = groupData.id,
-          team = teamId,
-          name = groupName,
-          ownerId = ownerId,
-          balance = groupData.balance,
-          membersLimit = membersLimit,
-          logoURL = teamData.DEFAULT_LOGO_URL,
-          permissions = permissions,
-          members = groupData.members,
-          roles = groupData.roles
-        }
-      
-        exports['oxmysql']:executeSync([[
-          UPDATE `fta_groups`
-          SET `team` = ?, `name` = ?, `owner_id` = ?, `members_limit` = ?, `logo_url` = ?, `permissions` = ?
-          WHERE `id` = ?
-        ]], { teamId, groupName, ownerId, membersLimit, teamData.DEFAULT_LOGO_URL, json.encode(permissions), groupData.id })
-      
-        if groupData.ownerId ~= ownerId then
-          for INDEX, MEMBER in ipairs(newGroup.members) do
-            if MEMBER.playerId == ownerId then
-              exports['oxmysql']:executeSync('DELETE FROM `fta_groups_members` WHERE `player_id` = ?', { groupData.ownerId })
-              exports['oxmysql']:executeSync('INSERT INTO `fta_groups_members` (`group`, `player_id`, `joined_at`, `last_login`) VALUES (?, ?, ?, ?)', { groupName, ownerId, os.time(), os.time() })
-      
-              table.insert(newGroup.members, { playerId = ownerId, roleId = MEMBER.roleId, joinedAt = os.time(), lastLogin = os.time() })
-              table.remove(newGroup.members, INDEX)
-              break
-            end
-          end
-        end
-    
-        CreateThread(function()
-          for INDEX, MEMBER in ipairs(groupData.members) do
-            Player:RemovePermissions(MEMBER.playerId, groupData.permissions)
-            Player:SetPermissions(MEMBER.playerId, permissions)
-          end
-        end)
-      
-        self.groups[groupId] = newGroup
-      
-        return true
+      if not teamData then
+        return false
       end
     
-      return false
+      local group = self.groups[groupId]
+    
+      if not group then
+        return false
+      end
+    
+      local newGroup = {
+        id = group.id,
+        team = teamId,
+        name = groupName,
+        ownerId = ownerId,
+        balance = group.balance,
+        membersLimit = membersLimit,
+        logoURL = teamData.DEFAULT_LOGO_URL,
+        permissions = permissions,
+        members = group.members,
+        roles = group.roles
+      }
+    
+      exports['oxmysql']:executeSync([[
+        UPDATE `fta_groups`
+        SET `team` = ?, `name` = ?, `owner_id` = ?, `members_limit` = ?, `logo_url` = ?, `permissions` = ?
+        WHERE `id` = ?
+      ]], { teamId, groupName, ownerId, membersLimit, teamData.DEFAULT_LOGO_URL, json.encode(permissions), group.id })
+    
+      if group.ownerId ~= ownerId then
+        for INDEX, MEMBER in ipairs(newGroup.members) do
+          if MEMBER.playerId == ownerId then
+            exports['oxmysql']:executeSync('DELETE FROM `fta_groups_members` WHERE `player_id` = ?', { group.ownerId })
+            exports['oxmysql']:executeSync('INSERT INTO `fta_groups_members` (`group`, `player_id`, `joined_at`, `last_login`) VALUES (?, ?, ?, ?)', { groupName, ownerId, os.time(), os.time() })
+    
+            table.insert(newGroup.members, { playerId = ownerId, roleId = MEMBER.roleId, joinedAt = os.time(), lastLogin = os.time() })
+            table.remove(newGroup.members, INDEX)
+            break
+          end
+        end
+      end
+    
+      local oldPermissions = group.permissions
+    
+      CreateThread(function()
+        for _, MEMBER in ipairs(newGroup.members) do
+          Player:RemovePermissions(MEMBER.playerId, oldPermissions)
+          Player:SetPermissions(MEMBER.playerId, permissions)
+        end
+      end)
+    
+      self.groups[groupId] = newGroup
+    
+      return true
     end
     
     function Group:DeleteGroup(groupId)
@@ -1633,10 +1663,14 @@ createModule('server/modules/group', function()
     end
     
     function Group:CreateRole(groupId, name, icon, permissions)
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
+    
+      if not group then
+        return false
+      end
     
       local roleInsert = exports['oxmysql']:executeSync('INSERT INTO `fta_groups_roles` (`group`, `name`, `permissions`, `icon`) VALUES (?, ?, ?, ?)', {
-        groupData.name,
+        group.name,
         name,
         json.encode(permissions),
         icon
@@ -1644,7 +1678,7 @@ createModule('server/modules/group', function()
     
       local roleId = roleInsert and roleInsert.insertId or 1
     
-      self.groups[groupData.name].roles[roleId] = {
+      group.roles[roleId] = {
         id = roleId,
         name = name,
         permissions = permissions,
@@ -1656,54 +1690,71 @@ createModule('server/modules/group', function()
     end
     
     function Group:DeleteRole(groupId, roleId)
-      local groupData = self.groups[groupId]
-      local roleData = groupData.roles[roleId]
+      local group = self.groups[groupId]
     
-      if roleData.canDelete then
-        local consultRole = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? AND `icon` = "MEMBER"', { groupId })[1]
-        
-        if consultRole then 
-          local consultRole = exports['oxmysql']:executeSync('UPDATE `fta_groups_members` SET `role_id` = ? WHERE `role_id` = ? AND `group` = ?', { consultRole.id, roleId, groupId })
-          exports['oxmysql']:executeSync('DELETE FROM `fta_groups_roles` WHERE `id` = ?', { roleId })
-    
-          self.groups[groupId].roles[roleId] = nil
-    
-          return true
-        end
+      if not group then
+        return false
       end
     
-      return false
+      local roleData = group.roles[roleId]
+    
+      if not roleData or not roleData.canDelete then
+        return false
+      end
+    
+      local consultRole = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? AND `icon` = "MEMBER"', { groupId })[1]
+      
+      if not consultRole then
+        return false
+      end
+    
+      exports['oxmysql']:executeSync('UPDATE `fta_groups_members` SET `role_id` = ? WHERE `role_id` = ? AND `group` = ?', { consultRole.id, roleId, groupId })
+      exports['oxmysql']:executeSync('DELETE FROM `fta_groups_roles` WHERE `id` = ?', { roleId })
+    
+      group.roles[roleId] = nil
+    
+      return true
     end
     
     function Group:EditRole(groupId, roleId, name, icon, permissions)
-      local groupData = self.groups[groupId]
-      local roleData = groupData.roles[roleId]
-      
-      if roleData.canDelete then
-        exports['oxmysql']:executeSync('UPDATE `fta_groups_roles` SET `name` = ?, `permissions` = ?, `icon` = ? WHERE `id` = ? AND `group` = ?', {
-          name,
-          json.encode(permissions),
-          icon,
-          roleId,
-          groupId
-        })
+      local group = self.groups[groupId]
     
-        self.groups[groupId].roles[roleId] = {
-          id = roleId,
-          name = name,
-          icon = icon,
-          permissions = permissions,
-          canDelete = true
-        }
-    
-        return true
+      if not group then
+        return false
       end
     
-      return false
+      local roleData = group.roles[roleId]
+    
+      if not roleData or not roleData.canDelete then
+        return false
+      end
+    
+      exports['oxmysql']:executeSync('UPDATE `fta_groups_roles` SET `name` = ?, `permissions` = ?, `icon` = ? WHERE `id` = ? AND `group` = ?', {
+        name,
+        json.encode(permissions),
+        icon,
+        roleId,
+        groupId
+      })
+    
+      group.roles[roleId] = {
+        id = roleId,
+        name = name,
+        icon = icon,
+        permissions = permissions,
+        canDelete = true
+      }
+    
+      return true
     end
     
     function Group:UpdateMemberRole(playerId, groupId, memberId, roleId)
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
+    
+      if not group then
+        return false
+      end
+    
       local playerRole = Player:GetPlayerRole(groupId, playerId)
     
       memberId = tonumber(memberId)
@@ -1713,25 +1764,25 @@ createModule('server/modules/group', function()
         return false
       end
     
-      if playerRole then
-        if playerRole.permissions.PROMOTE then
-          for INDEX, MEMBER in ipairs(groupData.members) do 
-            if MEMBER.playerId == memberId then 
-              self.groups[groupId].members[INDEX] = {
-                playerId = MEMBER.playerId,
-                roleId = roleId,
-                joinedAt = MEMBER.joinedAt
-              }
+      if not playerRole or not playerRole.permissions.PROMOTE then
+        return false
+      end
     
-              exports['oxmysql']:executeSync('UPDATE `fta_groups_members` SET `role_id` = ? WHERE `group` = ? AND `player_id` = ?', {
-                roleId,
-                groupId,
-                memberId
-              })
+      for INDEX, MEMBER in ipairs(group.members) do 
+        if MEMBER.playerId == memberId then 
+          group.members[INDEX] = {
+            playerId = MEMBER.playerId,
+            roleId = roleId,
+            joinedAt = MEMBER.joinedAt
+          }
     
-              return true
-            end
-          end
+          exports['oxmysql']:executeSync('UPDATE `fta_groups_members` SET `role_id` = ? WHERE `group` = ? AND `player_id` = ?', {
+            roleId,
+            groupId,
+            memberId
+          })
+    
+          return true
         end
       end
     
@@ -1739,35 +1790,44 @@ createModule('server/modules/group', function()
     end
     
     function Group:KickMember(playerId, groupId, memberId)
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
+    
+      if not group then
+        return
+      end
+    
       local playerRole = Player:GetPlayerRole(groupId, playerId)
     
       memberId = tonumber(memberId)
     
-      if playerRole then
-        if playerRole.permissions.KICK then 
-          for INDEX, MEMBER in ipairs(groupData.members) do 
-            if MEMBER.playerId == memberId then 
-              table.remove(self.groups[groupId].members, INDEX)
-              Player:RemovePermissions(memberId, groupData.permissions)
-              exports['oxmysql']:executeSync('DELETE FROM `fta_groups_members` WHERE `group` = ? AND `player_id` = ?', { groupData.name, memberId })
-              break
-            end
-          end
+      if not playerRole or not playerRole.permissions.KICK then
+        return
+      end
+    
+      for INDEX, MEMBER in ipairs(group.members) do 
+        if MEMBER.playerId == memberId then 
+          table.remove(group.members, INDEX)
+          Player:RemovePermissions(memberId, group.permissions)
+          exports['oxmysql']:executeSync('DELETE FROM `fta_groups_members` WHERE `group` = ? AND `player_id` = ?', { group.name, memberId })
+          break
         end
       end
     end
     
     function Group:ForceKickMember(groupId, memberId)
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
+    
+      if not group then
+        return
+      end
     
       memberId = tonumber(memberId)
     
-      for INDEX, MEMBER in ipairs(groupData.members) do 
+      for INDEX, MEMBER in ipairs(group.members) do 
         if MEMBER.playerId == memberId then
-          table.remove(self.groups[groupId].members, INDEX)
-          Player:RemovePermissions(memberId, groupData.permissions)
-          exports['oxmysql']:executeSync('DELETE FROM `fta_groups_members` WHERE `group` = ? AND `player_id` = ?', { groupData.name, memberId })
+          table.remove(group.members, INDEX)
+          Player:RemovePermissions(memberId, group.permissions)
+          exports['oxmysql']:executeSync('DELETE FROM `fta_groups_members` WHERE `group` = ? AND `player_id` = ?', { group.name, memberId })
           break
         end
       end
@@ -1776,27 +1836,33 @@ createModule('server/modules/group', function()
     function Group:UpdateLastTime(playerId)
       local consultMember = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_members` WHERE `player_id` = ?', { playerId })[1]
     
-      if consultMember then 
-        local timestamp = os.time()
-        local lastTime = consultMember.last_login + 604800
+      if not consultMember then
+        return
+      end
     
-        if lastTime < timestamp then
-          local groupData = self.groups[consultMember.group]
-          
-          if #groupData.members > 1 then
-            Group:ForceKickMember(consultMember.group, playerId)
-          end
-        else
-          exports['oxmysql']:executeSync('UPDATE `fta_groups_members` SET `last_login` = ? WHERE `player_id` = ?', { os.time(), playerId })
+      local timestamp = os.time()
+      local lastTime = consultMember.last_login + 604800
+    
+      if lastTime < timestamp then
+        local group = self.groups[consultMember.group]
+        
+        if group and #group.members > 1 then
+          Group:ForceKickMember(consultMember.group, playerId)
         end
+      else
+        exports['oxmysql']:executeSync('UPDATE `fta_groups_members` SET `last_login` = ? WHERE `player_id` = ?', { os.time(), playerId })
       end
     end
     
     function Group:TryInviteMember(playerId, groupId, memberId)  
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
     
-      if groupData.membersLimit then
-        if #groupData.members >= groupData.membersLimit then 
+      if not group then
+        return false
+      end
+    
+      if group.membersLimit then
+        if #group.members >= group.membersLimit then 
           return false
         end
       end
@@ -1815,58 +1881,64 @@ createModule('server/modules/group', function()
         return false
       end
     
-      if playerRole then
-        if playerRole.permissions.INVITE then
-          local memberSource = vRP.Source(memberId)
-          local message = '%s está te convidando para participar do grupo'
-          
-          local request = vRP.Request(memberSource, message:format(groupData.name))
-    
-          if request then
-            local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? AND `icon` = "MEMBER" AND `can_delete` = 0 ORDER BY `id` DESC LIMIT 1', { groupId })[1]
-    
-            if consultRoles then
-              local roleId = consultRoles.id
-              local timestamp = os.time()
-    
-              table.insert(self.groups[groupId].members, {
-                playerId = memberId,
-                roleId = roleId,
-                joinedAt = timestamp,
-                lastLogin = timestamp
-              })
-    
-              exports['oxmysql']:executeSync('INSERT INTO `fta_groups_members` (`group`, `player_id`, `role_id`, `joined_at`, `last_login`) VALUES (?, ?, ?, ?, ?)', {
-                groupData.name,
-                memberId,
-                roleId,
-                timestamp,
-                timestamp
-              })
-    
-              Player:SetPermissions(memberId, groupData.permissions)
-              
-              return true
-            end
-          end
-        end
+      if not playerRole or not playerRole.permissions.INVITE then
+        return false
       end
     
-      return false
+      local memberSource = vRP.Source(memberId)
+      local message = '%s está te convidando para participar do grupo'
+      
+      local request = vRP.Request(memberSource, message:format(group.name))
+    
+      if not request then
+        return false
+      end
+    
+      local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? AND `icon` = "MEMBER" AND `can_delete` = 0 ORDER BY `id` DESC LIMIT 1', { groupId })[1]
+    
+      if not consultRoles then
+        return false
+      end
+    
+      local roleId = consultRoles.id
+      local timestamp = os.time()
+    
+      table.insert(group.members, {
+        playerId = memberId,
+        roleId = roleId,
+        joinedAt = timestamp,
+        lastLogin = timestamp
+      })
+    
+      exports['oxmysql']:executeSync('INSERT INTO `fta_groups_members` (`group`, `player_id`, `role_id`, `joined_at`, `last_login`) VALUES (?, ?, ?, ?, ?)', {
+        group.name,
+        memberId,
+        roleId,
+        timestamp,
+        timestamp
+      })
+    
+      Player:SetPermissions(memberId, group.permissions)
+      
+      return true
     end
     
     function Group:GetLatestTransactions(groupId)
+      local group = self.groups[groupId]
+    
+      if not group then
+        return {}
+      end
+    
       local availableTransactions = {}
       local consultTransactions = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_transactions` WHERE `group` = ? ORDER BY `id` DESC LIMIT 10', { groupId })
-    
-      local groupData = self.groups[groupId]
     
       for _, TRANSACTION in ipairs(consultTransactions) do 
         table.insert(availableTransactions, {
           id = TRANSACTION.player_id,
           name = TRANSACTION.player_name,
           amount = TRANSACTION.amount,
-          role = groupData.roles[TRANSACTION.role_id],
+          role = group.roles[TRANSACTION.role_id],
           action = TRANSACTION.action,
           date = TRANSACTION.timestamp
         })
@@ -1876,88 +1948,107 @@ createModule('server/modules/group', function()
     end
     
     function Group:BankWithdraw(playerId, groupId, amount)
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
     
-      if groupData.balance < amount then 
+      if not group then
+        return false
+      end
+    
+      if group.balance < amount then 
         return false
       end
     
       local playerName = Player:GetName(playerId)
-    
       local playerRole, roleId = Player:GetPlayerRole(groupId, playerId)
       
-      if playerRole then
-        local rolePermissions = playerRole.permissions
-      
-        if rolePermissions.WITHDRAW_BANK then
-          vRP.GiveBank(playerId, amount)
-          self.groups[groupId].balance = self.groups[groupId].balance - amount
-      
-          exports['oxmysql']:executeSync('UPDATE `fta_groups` SET `balance` = `balance` - ? WHERE `name` = ?', { amount, groupId })
-          exports['oxmysql']:executeSync('INSERT INTO `fta_groups_transactions` (`group`, `player_id`, `player_name`, `amount`, `role_id`, `action`, `timestamp`) VALUES (?, ?, ?, ?, ?, ?, ?)', {
-            groupId,
-            playerId,
-            playerName,
-            amount,
-            roleId,
-            'WITHDRAW',
-            os.time()
-          })
-      
-          return true
-        end
+      if not playerRole or not playerRole.permissions.WITHDRAW_BANK then
+        return false
       end
     
-      return false
+      vRP.GiveBank(playerId, amount)
+      group.balance = group.balance - amount
+    
+      exports['oxmysql']:executeSync('UPDATE `fta_groups` SET `balance` = `balance` - ? WHERE `name` = ?', { amount, groupId })
+      exports['oxmysql']:executeSync('INSERT INTO `fta_groups_transactions` (`group`, `player_id`, `player_name`, `amount`, `role_id`, `action`, `timestamp`) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        groupId,
+        playerId,
+        playerName,
+        amount,
+        roleId,
+        'WITHDRAW',
+        os.time()
+      })
+    
+      return true
     end
     
     function Group:BankDeposit(playerId, groupId, amount)
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
+    
+      if not group then
+        return false
+      end
     
       local playerName = Player:GetName(playerId)
       local playerRole, roleId = Player:GetPlayerRole(groupId, playerId)
     
-      if vRP.PaymentBank(playerId, amount) then 
-        self.groups[groupId].balance = self.groups[groupId].balance + amount
-        exports['oxmysql']:executeSync('UPDATE `fta_groups` SET `balance` = `balance` + ? WHERE `name` = ?', { amount, groupId })
-        exports['oxmysql']:executeSync('INSERT INTO `fta_groups_transactions` (`group`, `player_id`, `player_name`, `amount`, `role_id`, `action`, `timestamp`) VALUES (?, ?, ?, ?, ?, ?, ?)', {
-          groupId,
-          playerId,
-          playerName,
-          amount,
-          roleId,
-          'DEPOSIT',
-          os.time()
-        })
-    
-        return true
+      if not vRP.PaymentBank(playerId, amount) then
+        return false
       end
     
-      return false
+      group.balance = group.balance + amount
+    
+      exports['oxmysql']:executeSync('UPDATE `fta_groups` SET `balance` = `balance` + ? WHERE `name` = ?', { amount, groupId })
+      exports['oxmysql']:executeSync('INSERT INTO `fta_groups_transactions` (`group`, `player_id`, `player_name`, `amount`, `role_id`, `action`, `timestamp`) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        groupId,
+        playerId,
+        playerName,
+        amount,
+        roleId,
+        'DEPOSIT',
+        os.time()
+      })
+    
+      return true
     end
     
     function Group:IsPlayerInGroup(playerId)
       local consultPlayer = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_members` WHERE `player_id` = ?', { playerId })[1]
     
-      if consultPlayer then 
-        local groupData = self.groups[consultPlayer.group]
-    
-        return consultPlayer.group, groupData.ownerId == playerId
+      if not consultPlayer then
+        return false
       end
     
-      return false
+      local group = self.groups[consultPlayer.group]
+    
+      if not group then
+        return false
+      end
+    
+      return consultPlayer.group, group.ownerId == playerId
     end
     
     function Group:UpdateLogo(groupId, logoURL)
-      self.groups[groupId].logoURL = logoURL
+      local group = self.groups[groupId]
+    
+      if not group then
+        return
+      end
+    
+      group.logoURL = logoURL
       exports['oxmysql']:executeSync('UPDATE `fta_groups` SET `logo_url` = ? WHERE `name` = ?', { logoURL, groupId })
     end
     
     function Group:GetMembersFromRole(groupId, roleId)
-      local groupData = self.groups[groupId]
+      local group = self.groups[groupId]
+    
+      if not group then
+        return 0
+      end
+    
       local members = {}
     
-      for _, MEMBER in ipairs(groupData.members) do 
+      for _, MEMBER in ipairs(group.members) do 
         if MEMBER.roleId == roleId then 
           table.insert(members, MEMBER)
         end
@@ -1967,7 +2058,7 @@ createModule('server/modules/group', function()
     end
     
     function Group:GetPlayerGroupById(playerId)
-      for _, GROUP in ipairs(self.groups) do
+      for _, GROUP in pairs(self.groups) do
         for _, MEMBER in ipairs(GROUP.members) do 
           if MEMBER.playerId == playerId then 
             return GROUP
@@ -1979,7 +2070,7 @@ createModule('server/modules/group', function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
-      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
         Citizen.Wait(1000)
       end
     
@@ -1989,7 +2080,7 @@ createModule('server/modules/group', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX do
+      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
         Citizen.Wait(1000)
       end
     
@@ -2133,7 +2224,7 @@ createModule('server/api/utils', function()
     end
     
     function api.getProfileImage()
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2186,23 +2277,28 @@ importModule('server/api/utils')
 
 createModule('server/api/group', function()
     function api.getGroupMembers(groupId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
       local playerSource = source 
       local playerId = vRP.Passport(playerSource)
     
-      local groupData = Group:GetGroups(groupId)
-      local groupMembers = Group:GetGroupMembers(groupId)
-      local groupRoles = Group:GetGroupRoles(groupId)
+      local group = Group:GetGroups(groupId)
+    
+      if not group then
+        return {}
+      end
+    
+      local groupMembers = group.members
+      local groupRoles = group.roles
       local members = {}
     
       for _, MEMBER in ipairs(groupMembers) do 
         local formatMember = Player:MemberFormat(groupId, MEMBER.playerId, MEMBER.roleId)
     
         formatMember.role = groupRoles[MEMBER.roleId]
-        formatMember.isLeader = MEMBER.playerId == groupData.ownerId
+        formatMember.isLeader = MEMBER.playerId == group.ownerId
         formatMember.isMe = playerId == MEMBER.playerId
     
         table.insert(members, formatMember)
@@ -2212,7 +2308,7 @@ createModule('server/api/group', function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2220,23 +2316,23 @@ createModule('server/api/group', function()
       local playerId = vRP.Passport(playerSource)
       local playerRole, roleId = Player:GetPlayerRole(groupId, playerId)
     
+      if not playerRole then
+        return nil, nil
+      end
+    
       return playerRole.permissions, roleId
     end
     
     function api.getGroups(groupId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
-      if groupId then
-        return Group.groups[groupId]
-      end
-    
-      return Group.groups
+      return Group:GetGroups(groupId)
     end
     
     function api.isPlayerInGroup()
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2252,7 +2348,7 @@ createModule('server/api/group', function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2265,7 +2361,7 @@ createModule('server/api/group', function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2278,7 +2374,7 @@ createModule('server/api/group', function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
       
@@ -2291,18 +2387,24 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupBank(groupId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
+      local group = Group:GetGroups(groupId)
+    
+      if not group then
+        return 0, {}
+      end
+    
       local transactions = Group:GetLatestTransactions(groupId)
-      local balance = Group.groups[groupId].balance or 0
+      local balance = group.balance or 0
       
       return balance, transactions
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2315,7 +2417,7 @@ createModule('server/api/group', function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2328,14 +2430,19 @@ createModule('server/api/group', function()
     end
     
     function api.getRoles(groupId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
-      local groupData = Group:GetGroups(groupId)
+      local group = Group:GetGroups(groupId)
+    
+      if not group then
+        return {}
+      end
+    
       local groupRoles = {}
     
-      for _, ROLE in pairs(groupData.roles) do
+      for _, ROLE in pairs(group.roles) do
         local members = Group:GetMembersFromRole(groupId, ROLE.id)
     
         table.insert(groupRoles, {
@@ -2352,7 +2459,7 @@ createModule('server/api/group', function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2362,7 +2469,7 @@ createModule('server/api/group', function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2372,7 +2479,7 @@ createModule('server/api/group', function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2382,7 +2489,7 @@ createModule('server/api/group', function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2390,7 +2497,7 @@ createModule('server/api/group', function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2406,7 +2513,7 @@ importModule('server/api/group')
 
 createModule('server/api/admin', function()
     function api.getAvailableGroups()
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2443,7 +2550,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getTeams(teamId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2468,7 +2575,7 @@ createModule('server/api/admin', function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2478,7 +2585,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2489,7 +2596,7 @@ createModule('server/api/admin', function()
     end
     
     function api.deleteGroup(groupId)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2499,7 +2606,7 @@ createModule('server/api/admin', function()
     end
     
     function api.hasAdminPermission()
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2511,7 +2618,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getPlayerName()
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2523,7 +2630,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRankingRewards()
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2533,7 +2640,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2543,7 +2650,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRescueRewards()
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
@@ -2553,7 +2660,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _xrtNjPiAcOyjkRHABMkPAMIeXBMlxNOZwvLcpUaAwExdlEVHpufulDKyCtWvTBaX then
+      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
         return
       end
     
