@@ -6,16 +6,21 @@ function api.getGroupMembers(groupId)
   local playerSource = source 
   local playerId = vRP.Passport(playerSource)
 
-  local groupData = Group:GetGroups(groupId)
-  local groupMembers = Group:GetGroupMembers(groupId)
-  local groupRoles = Group:GetGroupRoles(groupId)
+  local group = Group:GetGroups(groupId)
+
+  if not group then
+    return {}
+  end
+
+  local groupMembers = group.members
+  local groupRoles = group.roles
   local members = {}
 
   for _, MEMBER in ipairs(groupMembers) do 
     local formatMember = Player:MemberFormat(groupId, MEMBER.playerId, MEMBER.roleId)
 
     formatMember.role = groupRoles[MEMBER.roleId]
-    formatMember.isLeader = MEMBER.playerId == groupData.ownerId
+    formatMember.isLeader = MEMBER.playerId == group.ownerId
     formatMember.isMe = playerId == MEMBER.playerId
 
     table.insert(members, formatMember)
@@ -33,6 +38,10 @@ function api.getPlayerRolePermissions(groupId)
   local playerId = vRP.Passport(playerSource)
   local playerRole, roleId = Player:GetPlayerRole(groupId, playerId)
 
+  if not playerRole then
+    return nil, nil
+  end
+
   return playerRole.permissions, roleId
 end
 
@@ -41,11 +50,7 @@ function api.getGroups(groupId)
     return
   end
 
-  if groupId then
-    return Group.groups[groupId]
-  end
-
-  return Group.groups
+  return Group:GetGroups(groupId)
 end
 
 function api.isPlayerInGroup()
@@ -108,8 +113,14 @@ function api.getGroupBank(groupId)
     return
   end
 
+  local group = Group:GetGroups(groupId)
+
+  if not group then
+    return 0, {}
+  end
+
   local transactions = Group:GetLatestTransactions(groupId)
-  local balance = Group.groups[groupId].balance or 0
+  local balance = group.balance or 0
   
   return balance, transactions
 end
@@ -145,10 +156,15 @@ function api.getRoles(groupId)
     return
   end
 
-  local groupData = Group:GetGroups(groupId)
+  local group = Group:GetGroups(groupId)
+
+  if not group then
+    return {}
+  end
+
   local groupRoles = {}
 
-  for _, ROLE in pairs(groupData.roles) do
+  for _, ROLE in pairs(group.roles) do
     local members = Group:GetMembersFromRole(groupId, ROLE.id)
 
     table.insert(groupRoles, {

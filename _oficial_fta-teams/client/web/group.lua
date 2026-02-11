@@ -1,6 +1,16 @@
 function NUI:OpenGroup(groupId)
   local playerPermissions = apiServer.getPlayerRolePermissions(groupId)
+
+  if not playerPermissions then
+    return
+  end
+
   local groupData = apiServer.getGroups(groupId)
+
+  if not groupData then 
+    return
+  end
+  
   local teamData = CONFIG_TEAMS.TEAMS[groupData.team]
   local rolesList = {}
 

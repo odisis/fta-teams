@@ -1,11 +1,15 @@
 _G.Player = {}
 
 function Player:GetPlayerRole(groupId, playerId)
-  local groupData = Group:GetGroups(groupId)
+  local group = Group:GetGroups(groupId)
 
-  for _, MEMBER in ipairs(groupData.members) do 
+  if not group then
+    return false
+  end
+
+  for _, MEMBER in ipairs(group.members) do 
     if MEMBER.playerId == playerId then
-      return groupData.roles[MEMBER.roleId], MEMBER.roleId
+      return group.roles[MEMBER.roleId], MEMBER.roleId
     end
   end
 
@@ -14,6 +18,10 @@ end
 
 function Player:Get(groupId, playerId)
   local groupMembers = Group:GetGroupMembers(groupId)
+
+  if not groupMembers then
+    return nil
+  end
   
   for _, MEMBER in ipairs(groupMembers) do 
     if MEMBER.playerId == playerId then 
