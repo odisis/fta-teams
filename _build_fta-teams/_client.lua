@@ -1,22 +1,24 @@
-local Constructor = {
-    modules = {},
-    instantiate = function(self, name)
-        return self.modules[name]()
-    end,
-    define = function(self, name, handler)
-        self.modules[name] = handler
+local BUILDER = { modules = {} }
+
+function BUILDER.create(name, func)
+    BUILDER.modules[name] = { load = func }
+end
+
+function BUILDER.import(_name)
+    local name = tostring(_name)
+    local mod = BUILDER.modules[name]
+    assert(mod, 'Module '..name..' not found')
+    
+    if not mod.resolved then
+        mod.resolved = { mod.load() }
     end
-}
 
-_G.importModule = function(name)
-    return Constructor:instantiate(name)
+    return table.unpack(mod.resolved)
 end
 
-_G.createModule = function(name, handler)
-    Constructor:define(name, handler)
-end
+_G.import = BUILDER.import
 
-createModule('utils/utils', function()
+BUILDER.create("utils/utils", function()
     SERVER = IsDuplicityVersion()
     CLIENT = not SERVER
     
@@ -433,9 +435,9 @@ createModule('utils/utils', function()
     
     module = require
 end)
-importModule('utils/utils')
+BUILDER.import("utils/utils")
 
-createModule('utils/Tools', function()
+BUILDER.create("utils/Tools", function()
     Tools = {}
     
     local IDGenerator = {}
@@ -473,9 +475,9 @@ createModule('utils/Tools', function()
     	table.insert(self.ids, id)
     end
 end)
-importModule('utils/Tools')
+BUILDER.import("utils/Tools")
 
-createModule('utils/Proxy', function()
+BUILDER.create("utils/Proxy", function()
     Proxy = {}
     
     local callbackStore = setmetatable({}, { __mode = 'v' })
@@ -564,9 +566,9 @@ createModule('utils/Proxy', function()
     	return interface
     end
 end)
-importModule('utils/Proxy')
+BUILDER.import("utils/Proxy")
 
-createModule('utils/Tunnel', function()
+BUILDER.create("utils/Tunnel", function()
     local TriggerRemoteEvent = nil
     local RegisterLocalEvent = nil
     
@@ -702,9 +704,9 @@ createModule('utils/Tunnel', function()
     	return interface
     end
 end)
-importModule('utils/Tunnel')
+BUILDER.import("utils/Tunnel")
 
-createModule('client/main', function()
+BUILDER.create("client/main", function()
     vRP = Proxy.getInterface('vRP')
     
     api = {}
@@ -732,9 +734,9 @@ createModule('client/main', function()
       TriggerServerEvent('fta-teams:setupItems')
     end)
 end)
-importModule('client/main')
+BUILDER.import("client/main")
 
-createModule('client/dev', function()
+BUILDER.create("client/dev", function()
     if not SHARED_CONFIG.DEV_MODE then
         return
     end
@@ -744,9 +746,9 @@ createModule('client/dev', function()
         load(chunk)()
     end)
 end)
-importModule('client/dev')
+BUILDER.import("client/dev")
 
-createModule('client/modules/items', function()
+BUILDER.create("client/modules/items", function()
     _G.Items = {
       vehicles = {},
       items = {},
@@ -795,9 +797,9 @@ createModule('client/modules/items', function()
       Items:SetupPermissions(payload)
     end)
 end)
-importModule('client/modules/items')
+BUILDER.import("client/modules/items")
 
-createModule('client/modules/group', function()
+BUILDER.create("client/modules/group", function()
     RegisterCommand('paineleqp', function()
       local groupId = apiServer.isPlayerInGroup()
     
@@ -806,9 +808,9 @@ createModule('client/modules/group', function()
       end
     end)
 end)
-importModule('client/modules/group')
+BUILDER.import("client/modules/group")
 
-createModule('client/web/utils', function()
+BUILDER.create("client/web/utils", function()
     function NUI:HidePainel()
       self.groupId = nil
       SetNuiFocus(false, false)
@@ -820,9 +822,9 @@ createModule('client/web/utils', function()
       cb()
     end)
 end)
-importModule('client/web/utils')
+BUILDER.import("client/web/utils")
 
-createModule('client/web/group', function()
+BUILDER.create("client/web/group", function()
     function NUI:OpenGroup(groupId)
       local playerPermissions = apiServer.getPlayerRolePermissions(groupId)
     
@@ -972,9 +974,9 @@ createModule('client/web/group', function()
       cb({ success = status })
     end)
 end)
-importModule('client/web/group')
+BUILDER.import("client/web/group")
 
-createModule('client/web/admin', function()
+BUILDER.create("client/web/admin", function()
     function NUI:OpenAdmin(playerName)
       local playerImage = apiServer.getProfileImage()
     
@@ -1144,4 +1146,4 @@ createModule('client/web/admin', function()
       end
     end)
 end)
-importModule('client/web/admin')
+BUILDER.import("client/web/admin")

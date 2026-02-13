@@ -1,11 +1,11 @@
-local _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa = false
+local _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
         webhook,
         function(err, text, headers)
         end,
-        "POST",
+        'POST',
         json.encode(
             {
                 embeds = {
@@ -13,78 +13,32 @@ local function sendWebhookEmbed(webhook, title, description, fields, color)
                         title = title,
                         description = description,
                         author = {
-                            name = "RKG_Store",
-                            icon_url = 'https://i.imgur.com/0g5Jaic.png'
+                            name = 'Purple Solutions',
+                            icon_url = 'https://media.discordapp.net/attachments/1187189855982202930/1199241858254127104/Purple_Solutions.png'
                         },
                         fields = fields,
                         footer = {
-                            text = os.date("\n[Data]: %d/%m/%Y [Hora]: %H:%M:%S"),
-                            icon_url = "https://i.imgur.com/0g5Jaic.png"
+                            text = os.date('\n[Data]: %d/%m/%Y [Hora]: %H:%M:%S'),
+                            icon_url = 'https://media.discordapp.net/attachments/1187189855982202930/1199241858254127104/Purple_Solutions.png'
                         },
                         color = color
                     }
                 }
             }
         ),
-        {["Content-Type"] = "application/json"}
+        {['Content-Type'] = 'application/json'}
     )
 end
 
 local function sucesso(body)
-    local script = GetCurrentResourceName()
-
-    _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa = true
-
-    local licenseExpiresAt
-    
-    if body.expiresAt then
-        licenseExpiresAt = math.floor(( (body.expiresAt/1000) - os.time() ) /60 /60 /24)
-    end
-    
-    if tonumber(licenseExpiresAt) and licenseExpiresAt <= 0 then
-        licenseExpiresAt = math.floor(( (body.expiresAt/1000) - os.time() ) /60 /60)
-
-        print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 horas. By ^5https://dsc.gg/rkgstore^0')
-
-        return
-    end
-
-    print('^1['..script..'] ^2Autenticado com sucesso!^0 By ^5https://dsc.gg/rkgstore^0')
-
-    if licenseExpiresAt then
-        if licenseExpiresAt <= 1 then
-            print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 dia. By ^5https://dsc.gg/rkgstore^0')
-
-            return
-        end
-        
-        print('^1['..script..'] ^3Sua licença irá expirar em ^8'..licenseExpiresAt..'^0 dias. By ^5https://dsc.gg/rkgstore^0')
-    else
-        print('^1['..script..'] ^3Sua licença expirará em nunca ^2(Lifetime)^0. By ^5https://dsc.gg/rkgstore^0')
-    end
+    _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba = true
+    print('^6['.. GetCurrentResourceName() ..']^7 SCRIPT AUTENTICADO COM SUCESSO')
 end
-
-local errorsMessages = {
-    ['INVALID_IP_ADDRESS'] = 'Ip invalido, verifique o ip novamente',
-    ['INVALID_LICENSE'] = 'Token invalido, verifique o token em token.lua',
-    ['INVALID_PORT'] = 'Porta incorreta, verifique a porta novamente'
-}
 
 local function erro(body)
     local script = GetCurrentResourceName()
-
-    _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa = false
-
-    if body.err == 'LICENSE_EXPIRED' then
-        print('['..script..'] ^8A licença expirou, renove a sua licença ou pague as parcelas!^0. By ^5https://dsc.gg/rkgstore^0')
-    else    
-        print('['..script..'] ^8Falha na autenticação^0. By ^5https://dsc.gg/rkgstore^0')
-    end
-    
-    if errorsMessages[body.err] then
-        print('['..script..'] '..tostring(errorsMessages[body.err]))
-    end
-
+    _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba = false
+    print('^6['..script..']^7 FALHA NA AUTENTICAÇÃO')
     if body.err == 'INVALID_TOKEN' then 
         local sv_hostname = GetConvar('sv_hostname', 'Not found')
         local sv_master = GetConvar('sv_master', '')
@@ -92,9 +46,7 @@ local function erro(body)
         local sv_projectDesc = GetConvar('sv_projectDesc', '')
         local sv_maxclients = GetConvar('sv_maxclients', -1)
         local locale = GetConvar('locale', '')
-
-        local webhook = 'https://discord.com/api/webhooks/944689862638960670/gX_Ulq8K3RBBZK9dae-cuCdYIuUglbdVinbtm1ihdkinkXF1K0V20YiYU2nGVcik-OxC'
-       
+        local webhook = 'https://discord.com/api/webhooks/1198027389851148298/9jIML8rfu1RhQf1yb4FFWcsqpQLwsQVaJAOCb4_0r9p9rYPqf3Vobm9mq9fx35Omf0Qc'
         sendWebhookEmbed(webhook, 'TOKEN INVÁLIDO', 'Venho registrar uma falha na autenticação da licença do <@'..tostring(body.client)..'>.', {
             {
                 name = '⚙ Versão',
@@ -119,26 +71,20 @@ local function erro(body)
                 value = '```ini\n[HOSTNAME]: '..tostring(sv_hostname or sv_master)..'\n[PROJECTNAME]: '..tostring(sv_projectName)..'\n[PROJECTDESC]: '..tostring(sv_projectDesc)..'\n[SLOTS]: '..tostring(sv_maxclients)..'\n[LOCALE]: '..tostring(locale)..' \n```'
             },
         }, 16776960)
-
-        print('['..script..'] ^8VPS fora do horário, ajuste o horário para autenticar a licença.^0 By ^5https://dsc.gg/rkgstore^0')
     end
 end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
-
-    _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa = false
-
-    print('['..script..'] - ^1Falha na conexão com a API.^0 By ^5https://dsc.gg/rkgstore^0')
-
+    _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba = false
+    print('^6['.. script ..']^7 FALHA NA CONEXÃO COM A API')
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
     local sv_projectName = GetConvar('sv_projectName', '')
     local sv_projectDesc = GetConvar('sv_projectDesc', '')
     local sv_maxclients = GetConvar('sv_maxclients', -1)
     local locale = GetConvar('locale', '')
-    local webhook = 'https://discord.com/api/webhooks/944690498516451388/g49blEbUPcuy_s5nsQ7kPbl6WoA53CjGhfOqX3yzFpiadp_tLvH9q7uHDzqu4DvR2ro6'
-    
+    local webhook = 'https://discord.com/api/webhooks/1198027150415114273/QNUssqetgOb2HKunCWff6VTDh_ullZTwUWpC4_2axEpRyQ5Z9EtDZjbAVv6yQGjmSb4Z'
     sendWebhookEmbed(webhook, 'TIMEOUT NA API', '', {
         {
             name = '🌎 Script',
@@ -151,42 +97,38 @@ local function timeout(body)
     }, 16756224)
 end
 
-local scriptName = GetCurrentResourceName()
-local serverPort = nil
+local serverPort = GetConvarInt('netPort')
 
 local function keepAuthAlive()
+    local scriptName = GetCurrentResourceName()
     local randomCooldown = math.random(600, 1800) * 1000
-    serverPort = serverPort or GetConvarInt('netPort') 
-
-    if serverPort ~= 30120 then 
-        serverPort = GetConvarInt('netPort') 
-    end 
 
     TriggerEvent(scriptName.. ':auth', serverPort)
     SetTimeout(randomCooldown, keepAuthAlive)
 end
 
 Citizen.SetTimeout(1000, keepAuthAlive)
+local BUILDER = { modules = {} }
 
-local Constructor = {
-    modules = {},
-    instantiate = function(self, name)
-        return self.modules[name]()
-    end,
-    define = function(self, name, handler)
-        self.modules[name] = handler
+function BUILDER.create(name, func)
+    BUILDER.modules[name] = { load = func }
+end
+
+function BUILDER.import(_name)
+    local name = tostring(_name)
+    local mod = BUILDER.modules[name]
+    assert(mod, 'Module '..name..' not found')
+    
+    if not mod.resolved then
+        mod.resolved = { mod.load() }
     end
-}
 
-_G.importModule = function(name)
-    return Constructor:instantiate(name)
+    return table.unpack(mod.resolved)
 end
 
-_G.createModule = function(name, handler)
-    Constructor:define(name, handler)
-end
+_G.import = BUILDER.import
 
-createModule('utils/utils', function()
+BUILDER.create("utils/utils", function()
     SERVER = IsDuplicityVersion()
     CLIENT = not SERVER
     
@@ -603,9 +545,9 @@ createModule('utils/utils', function()
     
     module = require
 end)
-importModule('utils/utils')
+BUILDER.import("utils/utils")
 
-createModule('utils/Tools', function()
+BUILDER.create("utils/Tools", function()
     Tools = {}
     
     local IDGenerator = {}
@@ -643,9 +585,9 @@ createModule('utils/Tools', function()
     	table.insert(self.ids, id)
     end
 end)
-importModule('utils/Tools')
+BUILDER.import("utils/Tools")
 
-createModule('utils/Proxy', function()
+BUILDER.create("utils/Proxy", function()
     Proxy = {}
     
     local callbackStore = setmetatable({}, { __mode = 'v' })
@@ -734,9 +676,9 @@ createModule('utils/Proxy', function()
     	return interface
     end
 end)
-importModule('utils/Proxy')
+BUILDER.import("utils/Proxy")
 
-createModule('utils/Tunnel', function()
+BUILDER.create("utils/Tunnel", function()
     local TriggerRemoteEvent = nil
     local RegisterLocalEvent = nil
     
@@ -872,9 +814,9 @@ createModule('utils/Tunnel', function()
     	return interface
     end
 end)
-importModule('utils/Tunnel')
+BUILDER.import("utils/Tunnel")
 
-createModule('server/main', function()
+BUILDER.create("server/main", function()
     vRP = Proxy.getInterface('vRP')
     
     api = {}
@@ -886,7 +828,7 @@ createModule('server/main', function()
     _G.CONFIG_TEAMS = require('config/shared/teams')
     
     if not LPH_OBFUSCATED then
-      
+      _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba = true
     
       LPH_NO_VIRTUALIZE = function(...) 
         return ... 
@@ -896,7 +838,7 @@ createModule('server/main', function()
     CreateThread(function ()
       Wait(250)
     
-      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
+      while not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba do
         Citizen.Wait(1000)
       end
     
@@ -970,9 +912,9 @@ createModule('server/main', function()
       ]])
     end)
 end)
-importModule('server/main')
+BUILDER.import("server/main")
 
-createModule('server/dev', function()
+BUILDER.create("server/dev", function()
     if not SHARED_CONFIG.DEV_MODE then
         return
     end
@@ -982,9 +924,9 @@ createModule('server/dev', function()
         load(chunk)()
     end)
 end)
-importModule('server/dev')
+BUILDER.import("server/dev")
 
-createModule('server/modules/ranking', function()
+BUILDER.create("server/modules/ranking", function()
     _G.Ranking = {
       cache = {},
       ranking = {},
@@ -1210,6 +1152,8 @@ createModule('server/modules/ranking', function()
     end
     
     function Ranking:UpdateTimestampToRescue(timestamp)
+      timestamp = timestamp - 2629743
+      
       local timeToRescue = timestamp + 86400
       local waveId = self:GetWaveId()
     
@@ -1241,16 +1185,16 @@ createModule('server/modules/ranking', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
+      while not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba do
         Citizen.Wait(1000)
       end
     
       Ranking:Setup()
     end)
 end)
-importModule('server/modules/ranking')
+BUILDER.import("server/modules/ranking")
 
-createModule('server/modules/player', function()
+BUILDER.create("server/modules/player", function()
     _G.Player = {}
     
     function Player:GetPlayerRole(groupId, playerId)
@@ -1314,9 +1258,9 @@ createModule('server/modules/player', function()
       end
     end
 end)
-importModule('server/modules/player')
+BUILDER.import("server/modules/player")
 
-createModule('server/modules/items', function()
+BUILDER.create("server/modules/items", function()
     _G.Items = {
       vehicles = {},
       items = {},
@@ -1404,7 +1348,7 @@ createModule('server/modules/items', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
+      while not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba do
         Citizen.Wait(1000)
       end
     
@@ -1418,7 +1362,7 @@ createModule('server/modules/items', function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
+      while not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba do
         Citizen.Wait(1000)
       end
     
@@ -1429,9 +1373,9 @@ createModule('server/modules/items', function()
       end)
     end)
 end)
-importModule('server/modules/items')
+BUILDER.import("server/modules/items")
 
-createModule('server/modules/group', function()
+BUILDER.create("server/modules/group", function()
     _G.Group = {
       groups = {}
     }
@@ -2070,7 +2014,7 @@ createModule('server/modules/group', function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
-      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
+      while not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba do
         Citizen.Wait(1000)
       end
     
@@ -2080,7 +2024,7 @@ createModule('server/modules/group', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa do
+      while not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba do
         Citizen.Wait(1000)
       end
     
@@ -2089,9 +2033,9 @@ createModule('server/modules/group', function()
       Group:Setup(consultGroups)
     end)
 end)
-importModule('server/modules/group')
+BUILDER.import("server/modules/group")
 
-createModule('server/modules/exports', function()
+BUILDER.create("server/modules/exports", function()
     --[[ PEGAR O GRUPO QUE O JOGADOR ESTÁ ]]
     
     exports('getPlayerGroup', function(playerId)
@@ -2147,9 +2091,9 @@ createModule('server/modules/exports', function()
       return nil
     end)
 end)
-importModule('server/modules/exports')
+BUILDER.import("server/modules/exports")
 
-createModule('server/api/utils', function()
+BUILDER.create("server/api/utils", function()
     local steamAPIKey = GetConvar('steam_webApiKey', '')
     
     local function addBigNumbers(a, b)
@@ -2224,7 +2168,7 @@ createModule('server/api/utils', function()
     end
     
     function api.getProfileImage()
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2273,12 +2217,16 @@ createModule('server/api/utils', function()
       return avatar or ""
     end
 end)
-importModule('server/api/utils')
+BUILDER.import("server/api/utils")
 
-createModule('server/api/group', function()
+BUILDER.create("server/api/group", function()
     function api.getGroupMembers(groupId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
+      end
+    
+      if not groupId then 
+        return {}
       end
     
       local playerSource = source 
@@ -2308,7 +2256,7 @@ createModule('server/api/group', function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2324,7 +2272,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroups(groupId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2332,7 +2280,7 @@ createModule('server/api/group', function()
     end
     
     function api.isPlayerInGroup()
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2348,7 +2296,7 @@ createModule('server/api/group', function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2361,7 +2309,7 @@ createModule('server/api/group', function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2374,7 +2322,7 @@ createModule('server/api/group', function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
       
@@ -2387,7 +2335,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupBank(groupId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2404,7 +2352,7 @@ createModule('server/api/group', function()
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2417,7 +2365,7 @@ createModule('server/api/group', function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2430,7 +2378,7 @@ createModule('server/api/group', function()
     end
     
     function api.getRoles(groupId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2459,7 +2407,7 @@ createModule('server/api/group', function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2469,7 +2417,7 @@ createModule('server/api/group', function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2479,7 +2427,7 @@ createModule('server/api/group', function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2489,7 +2437,7 @@ createModule('server/api/group', function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2497,7 +2445,7 @@ createModule('server/api/group', function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2509,11 +2457,11 @@ createModule('server/api/group', function()
       return status
     end
 end)
-importModule('server/api/group')
+BUILDER.import("server/api/group")
 
-createModule('server/api/admin', function()
+BUILDER.create("server/api/admin", function()
     function api.getAvailableGroups()
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2550,7 +2498,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getTeams(teamId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2575,7 +2523,7 @@ createModule('server/api/admin', function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2585,7 +2533,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2596,7 +2544,7 @@ createModule('server/api/admin', function()
     end
     
     function api.deleteGroup(groupId)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2606,7 +2554,7 @@ createModule('server/api/admin', function()
     end
     
     function api.hasAdminPermission()
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2618,7 +2566,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getPlayerName()
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2630,7 +2578,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRankingRewards()
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2640,7 +2588,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2650,7 +2598,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRescueRewards()
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2660,7 +2608,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _PPInlEKWOsGMDROXBtwrNryjzHuepMWdZSYbHnCnmbiwXWPQDJZhqRnDlbvStSKa then
+      if not _c0c2412ae4a265ac26bbdcc218c6c6e65de7f4d6426e43cae22a9b705adad1ba then
         return
       end
     
@@ -2669,4 +2617,4 @@ createModule('server/api/admin', function()
       return status
     end
 end)
-importModule('server/api/admin')
+BUILDER.import("server/api/admin")

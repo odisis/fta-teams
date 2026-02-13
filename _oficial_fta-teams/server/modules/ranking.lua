@@ -223,6 +223,8 @@ function Ranking:ReadingFile()
 end
 
 function Ranking:UpdateTimestampToRescue(timestamp)
+  timestamp = timestamp - 2629743
+  
   local timeToRescue = timestamp + 86400
   local waveId = self:GetWaveId()
 

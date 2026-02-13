@@ -3,6 +3,10 @@ function api.getGroupMembers(groupId)
     return
   end
 
+  if not groupId then 
+    return {}
+  end
+
   local playerSource = source 
   local playerId = vRP.Passport(playerSource)
 
