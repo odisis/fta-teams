@@ -104,6 +104,10 @@ function api.tryInviteMember(groupId, memberId)
     return
   end
   
+  if not groupId or not memberId then 
+    return false
+  end
+
   local playerSource = source
   local playerId = vRP.Passport(playerSource)
 
