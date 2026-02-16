@@ -99,6 +99,17 @@ function api.kickMember(groupId, memberId)
   return true
 end
 
+function api.leaveMember(groupId, memberId)
+  if not __isAuth__ then
+    return
+  end
+
+  local playerSource = source
+  Group:LeaveMember(groupId, memberId)
+
+  return true
+end
+
 function api.tryInviteMember(groupId, memberId)
   if not __isAuth__ then
     return

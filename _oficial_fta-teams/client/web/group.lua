@@ -72,6 +72,13 @@ RegisterNUICallback('kickMember', function(data, cb)
   cb({ status = status })
 end)
 
+RegisterNUICallback('leaveGroup', function(data, cb)
+  local memberId = data.memberId
+  local status = apiServer.leaveMember(NUI.groupId, memberId)
+
+  cb({ status = status })
+end)
+
 RegisterNUICallback('tryInviteMember', function(data, cb)
   local memberId = data.memberId
   local status = apiServer.tryInviteMember(NUI.groupId, memberId)

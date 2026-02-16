@@ -366,7 +366,34 @@ function Group:KickMember(playerId, groupId, memberId)
 
   memberId = tonumber(memberId)
 
+  if group.ownerId == memberId then 
+    return
+  end
+
   if not playerRole or not playerRole.permissions.KICK then
+    return
+  end
+
+  for INDEX, MEMBER in ipairs(group.members) do 
+    if MEMBER.playerId == memberId then 
+      table.remove(group.members, INDEX)
+      Player:RemovePermissions(memberId, group.permissions)
+      exports['oxmysql']:executeSync('DELETE FROM `fta_groups_members` WHERE `group` = ? AND `player_id` = ?', { group.name, memberId })
+      break
+    end
+  end
+end
+
+function Group:LeaveMember(groupId, memberId)
+  local group = self.groups[groupId]
+
+  if not group then
+    return
+  end
+
+  memberId = tonumber(memberId)
+
+  if group.ownerId == memberId then 
     return
   end
 
