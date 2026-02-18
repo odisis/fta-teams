@@ -479,6 +479,11 @@ function Group:TryInviteMember(playerId, groupId, memberId)
   end
 
   local memberSource = vRP.Source(memberId)
+  
+  if not memberSource then
+    return false
+  end
+
   local message = '%s está te convidando para participar do grupo'
   
   local request = vRP.Request(memberSource, message:format(group.name))
