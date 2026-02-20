@@ -42,6 +42,22 @@ exports('getGroupRolePermissions', function(groupId, roleId)
   return nil
 end)
 
+--[[ PEGAR PERMISSOES DO MEMBRO PELO GROUP ID ]]
+exports('getPlayerRoleByGroupId', function(groupId, playerId)
+  local playerRole = Player:GetPlayerRole(groupId, playerId)
+  return playerRole
+end)
+
+--[[ PEGAR PERMISSOES DO MEMBRO ]]
+exports('getPlayerRole', function(playerId)
+  local playerGroup = Group:GetPlayerGroupById(playerId)
+
+  if playerGroup then
+    local playerRole = Player:GetPlayerRole(playerGroup.id, playerId)
+    return playerRole
+  end
+end)
+
 --[[ PEGAR MEMBROS DO GRUPO ]]
 exports('getGroupMembers', function(groupId)
   local groupData = Group:GetGroups(groupId)
