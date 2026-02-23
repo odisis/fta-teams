@@ -98,7 +98,7 @@ function Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit
   local roleInsert = exports['oxmysql']:executeSync('INSERT INTO `fta_groups_roles` (`group`, `name`, `permissions`, `icon`, `can_delete`) VALUES (?, ?, ?, ?, ?)', {
     groupName,
     'Líder',
-    json.encode({ INVITE = true, KICK = true, PROMOTE = true, WITHDRAW_BANK = true }),
+    json.encode({ INVITE = true, KICK = true, PROMOTE = true, WITHDRAW_BANK = true, CHEST = true, MATUTO = true, SETTINGS = true }),
     'LEADER',
     false
   })
@@ -108,7 +108,7 @@ function Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit
   local roleMemberInsert = exports['oxmysql']:executeSync('INSERT INTO `fta_groups_roles` (`group`, `name`, `permissions`, `icon`, `can_delete`) VALUES (?, ?, ?, ?, ?)', {
     groupName,
     'Membro',
-    json.encode({ INVITE = false, KICK = false, PROMOTE = false, WITHDRAW_BANK = false }),
+    json.encode({ INVITE = false, KICK = false, PROMOTE = false, WITHDRAW_BANK = false, CHEST = false, MATUTO = false, SETTINGS = false }),
     'MEMBER',
     false
   })
@@ -138,8 +138,8 @@ function Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit
       { playerId = ownerId, roleId = roleId, joinedAt = os.time(), lastTime = timestamp }
     },
     roles = {
-      [roleId] = { id = roleId, name = 'Líder', icon = 'LEADER', permissions = { INVITE = true, KICK = true, PROMOTE = true, WITHDRAW_BANK = true }, canDelete = false },
-      [roleMemberId] = { id = roleId, name = 'Membro', icon = 'MEMBER', permissions = { INVITE = false, KICK = false, PROMOTE = false, WITHDRAW_BANK = false }, canDelete = false },
+      [roleId] = { id = roleId, name = 'Líder', icon = 'LEADER', permissions = { INVITE = true, KICK = true, PROMOTE = true, WITHDRAW_BANK = true, CHEST = true, MATUTO = true, SETTINGS = true }, canDelete = false },
+      [roleMemberId] = { id = roleId, name = 'Membro', icon = 'MEMBER', permissions = { INVITE = false, KICK = false, PROMOTE = false, WITHDRAW_BANK = false, CHEST = false, MATUTO = false, SETTINGS = false }, canDelete = false },
     }
   }
 

@@ -44,17 +44,27 @@ end)
 
 --[[ PEGAR PERMISSOES DO MEMBRO PELO GROUP ID ]]
 exports('getPlayerRoleByGroupId', function(groupId, playerId)
-  local playerRole = Player:GetPlayerRole(groupId, playerId)
-  return playerRole
+  local groupData = Group:GetGroups(groupId)
+
+  if groupData then 
+    for _, MEMBER in ipairs(groupData.members) do 
+      if MEMBER.playerId == playerId then 
+        return groupData.roles[MEMBER.roleId].permissions
+      end
+    end
+  end
 end)
 
 --[[ PEGAR PERMISSOES DO MEMBRO ]]
 exports('getPlayerRole', function(playerId)
   local playerGroup = Group:GetPlayerGroupById(playerId)
 
-  if playerGroup then
-    local playerRole = Player:GetPlayerRole(playerGroup.id, playerId)
-    return playerRole
+  if playerGroup then 
+    for _, MEMBER in ipairs(playerGroup.members) do 
+      if MEMBER.playerId == playerId then 
+        return playerGroup.roles[MEMBER.roleId].permissions
+      end
+    end
   end
 end)
 
