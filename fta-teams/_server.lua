@@ -1,4 +1,4 @@
-local _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f = false
+local _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
@@ -31,13 +31,13 @@ local function sendWebhookEmbed(webhook, title, description, fields, color)
 end
 
 local function sucesso(body)
-    _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f = true
+    _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = true
     print('^6['.. GetCurrentResourceName() ..']^7 SCRIPT AUTENTICADO COM SUCESSO')
 end
 
 local function erro(body)
     local script = GetCurrentResourceName()
-    _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f = false
+    _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = false
     print('^6['..script..']^7 FALHA NA AUTENTICAÇÃO')
     if body.err == 'INVALID_TOKEN' then 
         local sv_hostname = GetConvar('sv_hostname', 'Not found')
@@ -76,7 +76,7 @@ end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
-    _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f = false
+    _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = false
     print('^6['.. script ..']^7 FALHA NA CONEXÃO COM A API')
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
@@ -828,7 +828,7 @@ BUILDER.create("server/main", function()
     _G.CONFIG_TEAMS = require('config/shared/teams')
     
     if not LPH_OBFUSCATED then
-      _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f = true
+      _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = true
     
       LPH_NO_VIRTUALIZE = function(...) 
         return ... 
@@ -838,7 +838,7 @@ BUILDER.create("server/main", function()
     CreateThread(function ()
       Wait(250)
     
-      while not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f do
+      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
         Citizen.Wait(1000)
       end
     
@@ -910,6 +910,21 @@ BUILDER.create("server/main", function()
           CONSTRAINT `FK_fta_groups_transactions_fta_groups` FOREIGN KEY (`group`) REFERENCES `fta_groups` (`name`) ON UPDATE CASCADE ON DELETE CASCADE
         ) COLLATE='utf8mb4_general_ci' ENGINE=InnoDB AUTO_INCREMENT=0;
       ]])
+      
+      exports['oxmysql']:executeSync([[
+        CREATE TABLE IF NOT EXISTS `fta_groups_chests` (
+          `id` INT(11) NOT NULL AUTO_INCREMENT,
+          `group` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+          `player_id` INT(11) NULL DEFAULT NULL,
+          `role_id` INT(11) NULL DEFAULT NULL,
+          `action` ENUM('STORE','TAKE') NULL DEFAULT 'STORE' COLLATE 'latin1_swedish_ci',
+          `payload` LONGTEXT NULL DEFAULT NULL COLLATE 'latin1_swedish_ci',
+          `timestamp` INT(11) NULL DEFAULT '0',
+          PRIMARY KEY (`id`) USING BTREE, -- Added missing comma here
+          INDEX `FK_fta_groups_chests_fta_groups` (`group`) USING BTREE,
+          CONSTRAINT `FK_fta_groups_chests_fta_groups` FOREIGN KEY (`group`) REFERENCES `fta_groups` (`name`) ON UPDATE CASCADE ON DELETE CASCADE
+        ) COLLATE='latin1_swedish_ci' ENGINE=InnoDB;
+      ]])
     end)
 end)
 BUILDER.import("server/main")
@@ -925,6 +940,149 @@ BUILDER.create("server/dev", function()
     end)
 end)
 BUILDER.import("server/dev")
+
+BUILDER.create("server/modules/roles", function()
+    _G.Roles = {
+      cache = {}
+    }
+    
+    function Roles:Setup(availableGroups)
+      local cached = {}
+    
+      for _, OBJECT in ipairs(availableGroups) do
+        local hierarchy = json.decode(OBJECT.roles_hierarchy)
+        local rolesHierarchy = {}
+    
+        if #hierarchy == 0 then
+          local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? ORDER BY id ASC', { OBJECT.name })
+      
+          for INDEX, ROLE in ipairs(consultRoles) do
+            table.insert(rolesHierarchy, {
+              role_id = ROLE.id,
+              name = ROLE.name,
+              hierarchy = INDEX
+            })
+          end
+      
+          exports['oxmysql']:executeSync('UPDATE `fta_groups` SET `roles_hierarchy` = ? WHERE `id` = ?', { json.encode(rolesHierarchy), OBJECT.id })
+        else
+          rolesHierarchy = hierarchy
+        end
+    
+        cached[OBJECT.id] = rolesHierarchy
+      end
+    
+      self.cache = cached
+    end
+    
+    function Roles:UpdateRoles(groupId, groupName)
+      local cached = {}
+      local rolesHierarchy = {}
+    
+      local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? ORDER BY id ASC', { groupName })
+    
+      for INDEX, ROLE in ipairs(consultRoles) do
+        table.insert(rolesHierarchy, {
+          role_id = ROLE.id,
+          name = ROLE.name,
+          hierarchy = INDEX
+        })
+      end
+    
+      exports['oxmysql']:executeSync('UPDATE `fta_groups` SET `roles_hierarchy` = ? WHERE `id` = ?', { json.encode(rolesHierarchy), groupId })
+    
+      self.cache[groupId] = rolesHierarchy
+    end
+    
+    function Roles:GetByGroupId(groupId)
+      if self.cache[groupId] then 
+        return self.cache[groupId]
+      end
+    end
+    
+    function Roles:GetRoleByGroupId(groupId, roleId)
+      if self.cache[groupId] then 
+        for _, ROLE in ipairs(self.cache[groupId]) do 
+          if ROLE.role_id == roleId then 
+            return ROLE
+          end
+        end
+      end
+    end
+    
+    local function persistGroupHierarchy(groupId, hierarchyData)
+      exports['oxmysql']:executeSync(
+        'UPDATE `fta_groups` SET `roles_hierarchy` = ? WHERE `id` = ?',
+        { json.encode(hierarchyData), groupId }
+      )
+    end
+    
+    local function findRoleIndex(rolesHierarchy, roleId)
+      for index, role in ipairs(rolesHierarchy) do
+        if tonumber(role.role_id) == tonumber(roleId) then
+          return index
+        end
+      end
+      return nil
+    end
+    
+    local function normalizeHierarchy(rolesHierarchy)
+      for index, role in ipairs(rolesHierarchy) do
+        role.hierarchy = index
+      end
+    end
+    
+    function Roles:UpRoleHierarchy(groupId, roleId)
+      local rolesHierarchy = self.cache[groupId]
+      if not rolesHierarchy then
+        return nil, 'Grupo não encontrado no cache.'
+      end
+    
+      local currentIndex = findRoleIndex(rolesHierarchy, roleId)
+      if not currentIndex then
+        return nil, 'Cargo não encontrado na hierarquia.'
+      end
+    
+      if currentIndex == 1 or currentIndex == 2 then
+        return rolesHierarchy, 'Cargo já está no topo da hierarquia.'
+      end
+    
+      rolesHierarchy[currentIndex], rolesHierarchy[currentIndex - 1] = rolesHierarchy[currentIndex - 1], rolesHierarchy[currentIndex]
+    
+      normalizeHierarchy(rolesHierarchy)
+      self.cache[groupId] = rolesHierarchy
+      persistGroupHierarchy(groupId, rolesHierarchy)
+    
+      return rolesHierarchy
+    end
+    
+    function Roles:DownRoleHierarchy(groupId, roleId)
+      local rolesHierarchy = self.cache[groupId]
+      
+      if not rolesHierarchy then
+        return nil, 'Grupo não encontrado no cache.'
+      end
+    
+      local currentIndex = findRoleIndex(rolesHierarchy, roleId)
+    
+      if not currentIndex then
+        return nil, 'Cargo não encontrado na hierarquia.'
+      end
+    
+      if currentIndex == #rolesHierarchy then
+        return rolesHierarchy, 'Cargo já está na base da hierarquia.'
+      end
+    
+      rolesHierarchy[currentIndex], rolesHierarchy[currentIndex + 1] = rolesHierarchy[currentIndex + 1], rolesHierarchy[currentIndex]
+    
+      normalizeHierarchy(rolesHierarchy)
+      self.cache[groupId] = rolesHierarchy
+      persistGroupHierarchy(groupId, rolesHierarchy)
+    
+      return rolesHierarchy
+    end
+end)
+BUILDER.import("server/modules/roles")
 
 BUILDER.create("server/modules/ranking", function()
     _G.Ranking = {
@@ -1185,7 +1343,7 @@ BUILDER.create("server/modules/ranking", function()
     CreateThread(function()
       Wait(1000)
     
-      while not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f do
+      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
         Citizen.Wait(1000)
       end
     
@@ -1264,6 +1422,7 @@ BUILDER.create("server/modules/items", function()
     _G.Items = {
       vehicles = {},
       items = {},
+      easyItems = {},
       permissions = {}
     }
     
@@ -1293,15 +1452,20 @@ BUILDER.create("server/modules/items", function()
         local itemList = ItemGlobal()
       
         local availableItems = {}
-        for INDEX, ITEM in pairs(itemList) do 
-          table.insert(availableItems, {
+        local cacheEasyItems = {}
+        for INDEX, ITEM in pairs(itemList) do
+          local data = {
             id = INDEX,
             name = ITEM.Name,
             imageURL = 'http://189.127.164.6/inv/'..INDEX..'.png',
-          })
+          }
+          
+          table.insert(availableItems, data)
+          cacheEasyItems[INDEX] = data
         end
       
         self.items = availableItems
+        self.easyItems = cacheEasyItems
         
         Wait(500)
     
@@ -1337,6 +1501,12 @@ BUILDER.create("server/modules/items", function()
       return self.items
     end
     
+    function Items:GetEasyItems(itemId)
+      if self.easyItems[itemId] then
+        return self.easyItems[itemId]
+      end 
+    end
+    
     function Items:GetVehicles()
       return self.vehicles
     end
@@ -1348,21 +1518,19 @@ BUILDER.create("server/modules/items", function()
     CreateThread(function()
       Wait(1000)
     
-      while not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f do
+      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
         Citizen.Wait(1000)
       end
     
-      Items:SetupVehicles()
-      Wait(500)
       Items:SetupItems()
-      Wait(500)
+      Items:SetupVehicles()
       Items:SetupPermissions()
     end)
     
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f do
+      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
         Citizen.Wait(1000)
       end
     
@@ -1380,12 +1548,20 @@ BUILDER.create("server/modules/group", function()
       groups = {}
     }
     
-    function Group:GetGroups(groupId)
-      if groupId then
-        return self.groups[groupId]
+    function Group:GetGroups(groupName)
+      if groupName then
+        return self.groups[groupName]
       end
     
       return self.groups
+    end
+    
+    function Group:GetGroupById(groupId)
+      for _, GROUP in pairs(self.groups) do
+        if GROUP.id == groupId then 
+          return GROUP
+        end
+      end
     end
     
     function Group:GetGroupRoles(groupId)
@@ -1630,6 +1806,8 @@ BUILDER.create("server/modules/group", function()
         canDelete = true
       }
     
+      Roles:UpdateRoles(group.id, group.name)
+    
       return true
     end
     
@@ -1656,6 +1834,8 @@ BUILDER.create("server/modules/group", function()
       exports['oxmysql']:executeSync('DELETE FROM `fta_groups_roles` WHERE `id` = ?', { roleId })
     
       group.roles[roleId] = nil
+    
+      Roles:UpdateRoles(group.id, group.name)
     
       return true
     end
@@ -2046,7 +2226,7 @@ BUILDER.create("server/modules/group", function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
-      while not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f do
+      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
         Citizen.Wait(1000)
       end
     
@@ -2054,14 +2234,19 @@ BUILDER.create("server/modules/group", function()
     end)
     
     CreateThread(function()
-      Wait(1000)
+      Wait(1500)
     
-      while not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f do
+      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
         Citizen.Wait(1000)
       end
     
       local consultGroups = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups`')
     
+      Roles:Setup(consultGroups)
+      Chests:Setup(consultGroups)
+    
+      Wait(500)
+      
       Group:Setup(consultGroups)
     end)
 end)
@@ -2151,6 +2336,119 @@ BUILDER.create("server/modules/exports", function()
 end)
 BUILDER.import("server/modules/exports")
 
+BUILDER.create("server/modules/chest", function()
+    _G.Chests = {
+      cache = {},
+      playersCache = {},
+      rolesCache = {}
+    }
+    
+    function Chests:GetPlayerName(playerId)
+      if not self.playersCache[playerId] then 
+        self.playersCache[playerId] = vRP.UserName(playerId)
+      end
+    
+      return self.playersCache[playerId]
+    end
+    
+    function Chests:Setup(availableGroups)
+      local availableChests = {}
+      local players = {}
+      local roles = {}
+    
+      for _, GROUP in ipairs(availableGroups) do 
+        local consultChests = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_chests` WHERE `group` = ?', { GROUP.name })
+    
+        if consultChests then 
+          availableChests[GROUP.name] = {}
+          
+          for _, CHEST in ipairs(consultChests) do
+            local playerName = Chests:GetPlayerName(CHEST.player_id)
+            local payload = json.decode(CHEST.payload)
+            local itemData = Items:GetEasyItems(payload.item)
+    
+            table.insert(availableChests[GROUP.name], {
+              id = CHEST.player_id,
+              name = playerName,
+              roleId = CHEST.role_id,
+              action = CHEST.action,
+              payload = {
+                name = itemData.name,
+                amount = payload.amount
+              },
+              timestamp = CHEST.timestamp
+            })
+          end
+        end
+      end
+    
+      self.cache = availableChests
+    end
+    
+    function Chests:InsertLogInGroup(groupId, playerId, action, item, amount)
+      local playerRole, roleId = Player:GetPlayerRole(groupId, playerId)
+    
+      if not playerRole then 
+        if SHARED_CONFIG.DEV_MODE then 
+          print('[DEBUG] - Não foi encontrado playerRole no jogador id: ', playerId, groupId)
+        end
+    
+        return
+      end
+    
+      local playerName = Chests:GetPlayerName(playerId)
+      local itemData = Items:GetEasyItems(item)
+    
+      if not self.cache[groupId] then
+        self.cache[groupId] = {}
+      end
+    
+      local timestamp = os.time()
+    
+      table.insert(self.cache[groupId], {
+        id = playerId,
+        name = playerName,
+        roleId = roleId,
+        action = action,
+        payload = {
+          name = itemData.name,
+          amount = amount
+        },
+        timestamp = timestamp
+      })
+    
+      exports['oxmysql']:executeSync('INSERT INTO `fta_groups_chests` (`group`, `player_id`, `role_id`, `action`, `payload`, `timestamp`) VALUES (?, ?, ?, ?, ?, ?)', {
+        groupId,
+        playerId,
+        roleId,
+        action,
+        json.encode({ item = item, amount = amount }),
+        timestamp
+      })
+    end 
+    
+    function Chests:GetLogsByGroupId(groupId)
+      local groupData = Group:GetGroupById(groupId)
+    
+      if groupData then 
+        if self.cache[groupData.name] then 
+          return self.cache[groupData.name]
+        end 
+      end
+    end
+    
+    function Chests:GetLogsByGroupName(groupName)
+      if self.cache[groupName] then 
+        return self.cache[groupName]
+      end 
+    end
+    
+    exports('insertLogInGroup', function(...)
+      Chests:InsertLogInGroup(...)
+    end)
+end)
+BUILDER.import("server/modules/chest")
+
 BUILDER.create("server/api/utils", function()
     local steamAPIKey = GetConvar('steam_webApiKey', '')
     
@@ -2226,7 +2524,7 @@ BUILDER.create("server/api/utils", function()
     end
     
     function api.getProfileImage()
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2279,7 +2577,7 @@ BUILDER.import("server/api/utils")
 
 BUILDER.create("server/api/group", function()
     function api.getGroupMembers(groupId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2314,7 +2612,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2330,15 +2628,53 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getGroups(groupId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
       return Group:GetGroups(groupId)
     end
     
+    function api.getGroupChestLogs(groupId)
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+        return
+      end
+    
+      local logs = Chests:GetLogsByGroupName(groupId) or {}
+    
+      return logs
+    end
+    
+    function api.getGroupHierarchy(groupId)
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+        return
+      end
+    
+      return Roles:GetByGroupId(groupId)
+    end
+    
+    function api.upgradeRoleHierarchy(groupId, roleId)
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+        return
+      end
+    
+      local status, message = Roles:UpRoleHierarchy(groupId, roleId)
+    
+      return type(status) == 'table'
+    end 
+    
+    function api.downgradeRoleHierarchy(groupId, roleId)
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+        return
+      end
+    
+      local status, message = Roles:DownRoleHierarchy(groupId, roleId)
+    
+      return type(status) == 'table'
+    end 
+    
     function api.isPlayerInGroup()
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2354,7 +2690,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2367,7 +2703,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2380,7 +2716,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.leaveMember(groupId, memberId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2391,7 +2727,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
       
@@ -2408,7 +2744,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getGroupBank(groupId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2425,7 +2761,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2438,7 +2774,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2451,7 +2787,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getRoles(groupId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2480,7 +2816,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2490,7 +2826,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2500,7 +2836,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2510,7 +2846,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2518,7 +2854,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2684,7 +3020,7 @@ BUILDER.import("server/api/chest")
 
 BUILDER.create("server/api/admin", function()
     function api.getAvailableGroups()
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2721,7 +3057,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.getTeams(teamId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2746,17 +3082,19 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
       local playerSource = source
     
-      Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit)
+      local status, reason = Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit)
+    
+      return status, reason
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2767,7 +3105,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.deleteGroup(groupId)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2777,7 +3115,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.hasAdminPermission()
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2789,7 +3127,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.getPlayerName()
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2801,7 +3139,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.getRankingRewards()
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2811,7 +3149,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2821,7 +3159,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.getRescueRewards()
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     
@@ -2831,7 +3169,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _60921e75706b937a9f2b6113734cab4b4de13d771c7c17494a71ae50acb3681f then
+      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
         return
       end
     

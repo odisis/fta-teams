@@ -1,6 +1,7 @@
 _G.Items = {
   vehicles = {},
   items = {},
+  easyItems = {},
   permissions = {}
 }
 
@@ -30,15 +31,20 @@ function Items:SetupItems()
     local itemList = ItemGlobal()
   
     local availableItems = {}
-    for INDEX, ITEM in pairs(itemList) do 
-      table.insert(availableItems, {
+    local cacheEasyItems = {}
+    for INDEX, ITEM in pairs(itemList) do
+      local data = {
         id = INDEX,
         name = ITEM.Name,
         imageURL = 'http://189.127.164.6/inv/'..INDEX..'.png',
-      })
+      }
+      
+      table.insert(availableItems, data)
+      cacheEasyItems[INDEX] = data
     end
   
     self.items = availableItems
+    self.easyItems = cacheEasyItems
     
     Wait(500)
 
@@ -74,6 +80,12 @@ function Items:GetItems()
   return self.items
 end
 
+function Items:GetEasyItems(itemId)
+  if self.easyItems[itemId] then
+    return self.easyItems[itemId]
+  end 
+end
+
 function Items:GetVehicles()
   return self.vehicles
 end
@@ -89,10 +101,8 @@ CreateThread(function()
     Citizen.Wait(1000)
   end
 
-  Items:SetupVehicles()
-  Wait(500)
   Items:SetupItems()
-  Wait(500)
+  Items:SetupVehicles()
   Items:SetupPermissions()
 end)
 

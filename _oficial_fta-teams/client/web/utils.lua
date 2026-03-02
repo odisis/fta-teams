@@ -1,5 +1,6 @@
 function NUI:HidePainel()
   self.groupId = nil
+  self.groupData = nil
   SetNuiFocus(false, false)
 end
 

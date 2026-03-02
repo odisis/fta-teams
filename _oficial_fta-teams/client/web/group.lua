@@ -11,15 +11,23 @@ function NUI:OpenGroup(groupId)
     return
   end
   
+  local groupHierarchy = apiServer.getGroupHierarchy(groupData.id)
+
+  if not groupHierarchy then 
+    return
+  end
+
   local teamData = CONFIG_TEAMS.TEAMS[groupData.team]
   local rolesList = {}
 
+  self.groupData = groupData
   self.groupId = groupId
 
   for _, ROLE in pairs(groupData.roles) do 
     table.insert(rolesList, {
       id = ROLE.id,
       name = ROLE.name,
+      icon = ROLE.icon,
       permissions = ROLE.permissions,
       canDelete = ROLE.canDelete
     })
@@ -37,6 +45,7 @@ function NUI:OpenGroup(groupId)
       },
       bannerURL = teamData.BANNER_URL,
       logoURL = groupData.logoURL,
+      rolesHierarchy = groupHierarchy,
       rolesList = rolesList,
     }
   })
@@ -49,6 +58,12 @@ function NUI:HideGroup()
     action = 'closeGroup'
   })
 end
+
+RegisterNUICallback('getGroupHierarchy', function(data, cb)
+  local groupHierarchy = apiServer.getGroupHierarchy(NUI.groupData.id)
+  
+  cb({ rolesHierarchy = groupHierarchy })
+end)
 
 RegisterNUICallback('getGroupMembers', function(data, cb)
   local members = apiServer.getGroupMembers(NUI.groupId)
@@ -143,10 +158,31 @@ RegisterNUICallback('editRole', function(data, cb)
   cb({ status = status })
 end)
 
+RegisterNUICallback('updateRole', function(data, cb)
+  local id, action = data.id, data.action
+  local status = false
+
+  if type(NUI.groupData) == 'table' then 
+    if action == 'upgrade' then 
+      status = apiServer.upgradeRoleHierarchy(NUI.groupData.id, id)
+    else
+      status = apiServer.downgradeRoleHierarchy(NUI.groupData.id, id)
+    end
+  end
+  
+  cb({ status = status })
+end)
+
 RegisterNUICallback('updateGroupLogo', function(data, cb)
   apiServer.editGroupLogo(NUI.groupId, data.logoURL)
   
   cb({ status = true })
+end)
+
+RegisterNUICallback('getGroupChestLogs', function(data, cb)
+  local logs = apiServer.getGroupChestLogs(NUI.groupId)
+
+  cb({ logs = logs })
 end)
 
 RegisterNUICallback('tryRescueRewards', function(data, cb)

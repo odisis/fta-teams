@@ -2,12 +2,20 @@ _G.Group = {
   groups = {}
 }
 
-function Group:GetGroups(groupId)
-  if groupId then
-    return self.groups[groupId]
+function Group:GetGroups(groupName)
+  if groupName then
+    return self.groups[groupName]
   end
 
   return self.groups
+end
+
+function Group:GetGroupById(groupId)
+  for _, GROUP in pairs(self.groups) do
+    if GROUP.id == groupId then 
+      return GROUP
+    end
+  end
 end
 
 function Group:GetGroupRoles(groupId)
@@ -252,6 +260,8 @@ function Group:CreateRole(groupId, name, icon, permissions)
     canDelete = true
   }
 
+  Roles:UpdateRoles(group.id, group.name)
+
   return true
 end
 
@@ -278,6 +288,8 @@ function Group:DeleteRole(groupId, roleId)
   exports['oxmysql']:executeSync('DELETE FROM `fta_groups_roles` WHERE `id` = ?', { roleId })
 
   group.roles[roleId] = nil
+
+  Roles:UpdateRoles(group.id, group.name)
 
   return true
 end
@@ -676,7 +688,7 @@ AddEventHandler('Connect', function(Passport, source, bool)
 end)
 
 CreateThread(function()
-  Wait(1000)
+  Wait(1500)
 
   while not __isAuth__ do
     Citizen.Wait(1000)
@@ -684,5 +696,10 @@ CreateThread(function()
 
   local consultGroups = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups`')
 
+  Roles:Setup(consultGroups)
+  Chests:Setup(consultGroups)
+
+  Wait(500)
+  
   Group:Setup(consultGroups)
 end)

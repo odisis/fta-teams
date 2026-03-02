@@ -16,6 +16,7 @@ end
 
 _G.NUI = {
   groupId = nil,
+  groupData = nil,
   profileImage = ''
 }
 

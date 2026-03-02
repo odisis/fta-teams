@@ -1,4 +1,3 @@
-shared_script "@fta-jobs/shared.lua"
 fx_version 'adamant'
 game 'gta5'
 
@@ -17,6 +16,11 @@ shared_scripts {
 	'utils/Tools.lua',
 	'utils/Proxy.lua',
 	'utils/Tunnel.lua'
+}
+
+shared_scripts {
+  '@vrp/config/Groups.lua',
+  '@vrp/config/Item.lua',
 }
 
 client_scripts {

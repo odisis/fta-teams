@@ -67,7 +67,9 @@ function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
 
   local playerSource = source
 
-  Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit)
+  local status, reason = Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit)
+
+  return status, reason
 end
 
 function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)

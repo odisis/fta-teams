@@ -57,6 +57,44 @@ function api.getGroups(groupId)
   return Group:GetGroups(groupId)
 end
 
+function api.getGroupChestLogs(groupId)
+  if not __isAuth__ then
+    return
+  end
+
+  local logs = Chests:GetLogsByGroupName(groupId) or {}
+
+  return logs
+end
+
+function api.getGroupHierarchy(groupId)
+  if not __isAuth__ then
+    return
+  end
+
+  return Roles:GetByGroupId(groupId)
+end
+
+function api.upgradeRoleHierarchy(groupId, roleId)
+  if not __isAuth__ then
+    return
+  end
+
+  local status, message = Roles:UpRoleHierarchy(groupId, roleId)
+
+  return type(status) == 'table'
+end 
+
+function api.downgradeRoleHierarchy(groupId, roleId)
+  if not __isAuth__ then
+    return
+  end
+
+  local status, message = Roles:DownRoleHierarchy(groupId, roleId)
+
+  return type(status) == 'table'
+end 
+
 function api.isPlayerInGroup()
   if not __isAuth__ then
     return

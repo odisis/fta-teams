@@ -17,6 +17,6 @@ return {
       COLOR = '#5900ff',
       BANNER_URL = 'http://189.127.164.6/banners/imd_banner_painel.png',
       DEFAULT_LOGO_URL = 'http://189.127.164.6/logo/Irmandade.png'
-    },
+    }
   }
 }

@@ -91,4 +91,19 @@ CreateThread(function ()
       CONSTRAINT `FK_fta_groups_transactions_fta_groups` FOREIGN KEY (`group`) REFERENCES `fta_groups` (`name`) ON UPDATE CASCADE ON DELETE CASCADE
     ) COLLATE='utf8mb4_general_ci' ENGINE=InnoDB AUTO_INCREMENT=0;
   ]])
+  
+  exports['oxmysql']:executeSync([[
+    CREATE TABLE IF NOT EXISTS `fta_groups_chests` (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `group` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_general_ci',
+      `player_id` INT(11) NULL DEFAULT NULL,
+      `role_id` INT(11) NULL DEFAULT NULL,
+      `action` ENUM('STORE','TAKE') NULL DEFAULT 'STORE' COLLATE 'latin1_swedish_ci',
+      `payload` LONGTEXT NULL DEFAULT NULL COLLATE 'latin1_swedish_ci',
+      `timestamp` INT(11) NULL DEFAULT '0',
+      PRIMARY KEY (`id`) USING BTREE, -- Added missing comma here
+      INDEX `FK_fta_groups_chests_fta_groups` (`group`) USING BTREE,
+      CONSTRAINT `FK_fta_groups_chests_fta_groups` FOREIGN KEY (`group`) REFERENCES `fta_groups` (`name`) ON UPDATE CASCADE ON DELETE CASCADE
+    ) COLLATE='latin1_swedish_ci' ENGINE=InnoDB;
+  ]])
 end)
