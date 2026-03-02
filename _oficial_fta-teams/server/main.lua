@@ -32,6 +32,7 @@ CreateThread(function ()
       `members_limit` INT(11) NULL DEFAULT '25',
       `balance` INT(11) NULL DEFAULT '0',
       `permissions` LONGTEXT NULL DEFAULT '[]' COLLATE 'utf8mb4_general_ci',
+      `roles_hierarchy` LONGTEXT NULL DEFAULT '[]' COLLATE 'utf8mb4_general_ci',
       `logo_url` VARCHAR(255) NULL DEFAULT '' COLLATE 'utf8mb4_general_ci',
       PRIMARY KEY (`id`) USING BTREE,
       INDEX `name` (`name`) USING BTREE
