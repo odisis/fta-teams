@@ -1,4 +1,4 @@
-local _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = false
+local _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
@@ -31,13 +31,13 @@ local function sendWebhookEmbed(webhook, title, description, fields, color)
 end
 
 local function sucesso(body)
-    _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = true
+    _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 = true
     print('^6['.. GetCurrentResourceName() ..']^7 SCRIPT AUTENTICADO COM SUCESSO')
 end
 
 local function erro(body)
     local script = GetCurrentResourceName()
-    _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = false
+    _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 = false
     print('^6['..script..']^7 FALHA NA AUTENTICAÇÃO')
     if body.err == 'INVALID_TOKEN' then 
         local sv_hostname = GetConvar('sv_hostname', 'Not found')
@@ -76,7 +76,7 @@ end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
-    _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = false
+    _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 = false
     print('^6['.. script ..']^7 FALHA NA CONEXÃO COM A API')
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
@@ -828,7 +828,7 @@ BUILDER.create("server/main", function()
     _G.CONFIG_TEAMS = require('config/shared/teams')
     
     if not LPH_OBFUSCATED then
-      _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 = true
+      _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 = true
     
       LPH_NO_VIRTUALIZE = function(...) 
         return ... 
@@ -838,7 +838,7 @@ BUILDER.create("server/main", function()
     CreateThread(function ()
       Wait(250)
     
-      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
+      while not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 do
         Citizen.Wait(1000)
       end
     
@@ -851,6 +851,7 @@ BUILDER.create("server/main", function()
           `members_limit` INT(11) NULL DEFAULT '25',
           `balance` INT(11) NULL DEFAULT '0',
           `permissions` LONGTEXT NULL DEFAULT '[]' COLLATE 'utf8mb4_general_ci',
+          `roles_hierarchy` LONGTEXT NULL DEFAULT '[]' COLLATE 'utf8mb4_general_ci',
           `logo_url` VARCHAR(255) NULL DEFAULT '' COLLATE 'utf8mb4_general_ci',
           PRIMARY KEY (`id`) USING BTREE,
           INDEX `name` (`name`) USING BTREE
@@ -975,12 +976,10 @@ BUILDER.create("server/modules/roles", function()
       self.cache = cached
     end
     
-    function Roles:UpdateRoles(groupId, groupName)
-      local cached = {}
+    function Roles:Refresh(groupId, groupName)
       local rolesHierarchy = {}
-    
       local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? ORDER BY id ASC', { groupName })
-    
+      
       for INDEX, ROLE in ipairs(consultRoles) do
         table.insert(rolesHierarchy, {
           role_id = ROLE.id,
@@ -1343,7 +1342,7 @@ BUILDER.create("server/modules/ranking", function()
     CreateThread(function()
       Wait(1000)
     
-      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
+      while not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 do
         Citizen.Wait(1000)
       end
     
@@ -1518,7 +1517,7 @@ BUILDER.create("server/modules/items", function()
     CreateThread(function()
       Wait(1000)
     
-      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
+      while not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 do
         Citizen.Wait(1000)
       end
     
@@ -1530,7 +1529,7 @@ BUILDER.create("server/modules/items", function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
+      while not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 do
         Citizen.Wait(1000)
       end
     
@@ -1693,10 +1692,11 @@ BUILDER.create("server/modules/group", function()
         },
         roles = {
           [roleId] = { id = roleId, name = 'Líder', icon = 'LEADER', permissions = { INVITE = true, KICK = true, PROMOTE = true, WITHDRAW_BANK = true, CHEST = true, MATUTO = true, SETTINGS = true }, canDelete = false },
-          [roleMemberId] = { id = roleId, name = 'Membro', icon = 'MEMBER', permissions = { INVITE = false, KICK = false, PROMOTE = false, WITHDRAW_BANK = false, CHEST = false, MATUTO = false, SETTINGS = false }, canDelete = false },
+          [roleMemberId] = { id = roleMemberId, name = 'Membro', icon = 'MEMBER', permissions = { INVITE = false, KICK = false, PROMOTE = false, WITHDRAW_BANK = false, CHEST = false, MATUTO = false, SETTINGS = false }, canDelete = false },
         }
       }
     
+      Roles:Refresh(groupId, groupName)
       Player:SetPermissions(ownerId, permissions)
     end
     
@@ -1806,7 +1806,7 @@ BUILDER.create("server/modules/group", function()
         canDelete = true
       }
     
-      Roles:UpdateRoles(group.id, group.name)
+      Roles:Refresh(group.id, group.name)
     
       return true
     end
@@ -1835,7 +1835,7 @@ BUILDER.create("server/modules/group", function()
     
       group.roles[roleId] = nil
     
-      Roles:UpdateRoles(group.id, group.name)
+      Roles:Refresh(group.id, group.name)
     
       return true
     end
@@ -2226,7 +2226,7 @@ BUILDER.create("server/modules/group", function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
-      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
+      while not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 do
         Citizen.Wait(1000)
       end
     
@@ -2236,7 +2236,7 @@ BUILDER.create("server/modules/group", function()
     CreateThread(function()
       Wait(1500)
     
-      while not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 do
+      while not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 do
         Citizen.Wait(1000)
       end
     
@@ -2524,7 +2524,7 @@ BUILDER.create("server/api/utils", function()
     end
     
     function api.getProfileImage()
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2577,7 +2577,7 @@ BUILDER.import("server/api/utils")
 
 BUILDER.create("server/api/group", function()
     function api.getGroupMembers(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2612,7 +2612,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2628,7 +2628,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getGroups(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2636,7 +2636,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getGroupChestLogs(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2646,7 +2646,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getGroupHierarchy(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2654,7 +2654,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.upgradeRoleHierarchy(groupId, roleId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2664,7 +2664,7 @@ BUILDER.create("server/api/group", function()
     end 
     
     function api.downgradeRoleHierarchy(groupId, roleId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2674,7 +2674,7 @@ BUILDER.create("server/api/group", function()
     end 
     
     function api.isPlayerInGroup()
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2690,7 +2690,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2703,7 +2703,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2716,7 +2716,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.leaveMember(groupId, memberId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2727,7 +2727,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
       
@@ -2744,7 +2744,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getGroupBank(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2761,7 +2761,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2774,7 +2774,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2787,7 +2787,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.getRoles(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2816,7 +2816,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2826,7 +2826,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2836,7 +2836,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2846,7 +2846,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -2854,7 +2854,7 @@ BUILDER.create("server/api/group", function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3020,7 +3020,7 @@ BUILDER.import("server/api/chest")
 
 BUILDER.create("server/api/admin", function()
     function api.getAvailableGroups()
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3057,7 +3057,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.getTeams(teamId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3082,7 +3082,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3094,7 +3094,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3105,7 +3105,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.deleteGroup(groupId)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3115,7 +3115,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.hasAdminPermission()
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3127,7 +3127,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.getPlayerName()
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3139,7 +3139,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.getRankingRewards()
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3149,7 +3149,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3159,7 +3159,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.getRescueRewards()
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     
@@ -3169,7 +3169,7 @@ BUILDER.create("server/api/admin", function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _77a512f32e66f07630bc060abfbe9a5c0dceccc7bcf4222930a5522cd1ef06f3 then
+      if not _566c743eb1c9c4afda48193c3f2fe4066259230d14b49fdef16fab0c50b7d262 then
         return
       end
     

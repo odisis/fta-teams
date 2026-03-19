@@ -147,10 +147,11 @@ function Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit
     },
     roles = {
       [roleId] = { id = roleId, name = 'Líder', icon = 'LEADER', permissions = { INVITE = true, KICK = true, PROMOTE = true, WITHDRAW_BANK = true, CHEST = true, MATUTO = true, SETTINGS = true }, canDelete = false },
-      [roleMemberId] = { id = roleId, name = 'Membro', icon = 'MEMBER', permissions = { INVITE = false, KICK = false, PROMOTE = false, WITHDRAW_BANK = false, CHEST = false, MATUTO = false, SETTINGS = false }, canDelete = false },
+      [roleMemberId] = { id = roleMemberId, name = 'Membro', icon = 'MEMBER', permissions = { INVITE = false, KICK = false, PROMOTE = false, WITHDRAW_BANK = false, CHEST = false, MATUTO = false, SETTINGS = false }, canDelete = false },
     }
   }
 
+  Roles:Refresh(groupId, groupName)
   Player:SetPermissions(ownerId, permissions)
 end
 
@@ -260,7 +261,7 @@ function Group:CreateRole(groupId, name, icon, permissions)
     canDelete = true
   }
 
-  Roles:UpdateRoles(group.id, group.name)
+  Roles:Refresh(group.id, group.name)
 
   return true
 end
@@ -289,7 +290,7 @@ function Group:DeleteRole(groupId, roleId)
 
   group.roles[roleId] = nil
 
-  Roles:UpdateRoles(group.id, group.name)
+  Roles:Refresh(group.id, group.name)
 
   return true
 end

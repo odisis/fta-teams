@@ -31,12 +31,10 @@ function Roles:Setup(availableGroups)
   self.cache = cached
 end
 
-function Roles:UpdateRoles(groupId, groupName)
-  local cached = {}
+function Roles:Refresh(groupId, groupName)
   local rolesHierarchy = {}
-
   local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? ORDER BY id ASC', { groupName })
-
+  
   for INDEX, ROLE in ipairs(consultRoles) do
     table.insert(rolesHierarchy, {
       role_id = ROLE.id,

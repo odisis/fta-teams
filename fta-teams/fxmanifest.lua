@@ -17,15 +17,9 @@ dependencies {
     "/server:2843"
 }
 
-shared_scripts {
-  '@vrp/config/Groups.lua',
-  '@vrp/config/Item.lua',
-}
-
 server_scripts {
     "token.lua"
 }
-
 client_script "_client.lua"
 
 server_script "_server.lua"
