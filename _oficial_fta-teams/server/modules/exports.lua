@@ -15,9 +15,13 @@ end)
 
 --[[ PEGAR GRUPO PELO ID ]]
 exports('getGroup', function(groupId)
-  local groupData = Group:GetGroups(groupId)
+  local groupData = Group:GetGroupById(tonumber(groupId)) or Group:GetGroups(groupId)
 
   return groupData
+end)
+
+exports('getOrganizationById', function(groupId)
+  return Group:GetGroupById(tonumber(groupId))
 end)
 
 --[[ PEGAR CARGOS DO GRUPO ]]

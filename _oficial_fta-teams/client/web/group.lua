@@ -12,6 +12,7 @@ function NUI:OpenGroup(groupId)
   end
   
   local groupHierarchy = apiServer.getGroupHierarchy(groupData.id)
+  local chestPlacement = apiServer.getOrganizationChestPlacement(groupData.id)
 
   if not groupHierarchy then 
     return
@@ -47,6 +48,7 @@ function NUI:OpenGroup(groupId)
       logoURL = groupData.logoURL,
       rolesHierarchy = groupHierarchy,
       rolesList = rolesList,
+      chestPlacement = chestPlacement,
     }
   })
 end

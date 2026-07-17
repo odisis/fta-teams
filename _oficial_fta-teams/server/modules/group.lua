@@ -2,6 +2,11 @@ _G.Group = {
   groups = {}
 }
 
+local function getFactionPermission(teamId)
+  local team = CONFIG_TEAMS.TEAMS[teamId]
+  return team and (team.PERMISSION or teamId) or teamId
+end
+
 function Group:GetGroups(groupName)
   if groupName then
     return self.groups[groupName]
@@ -65,6 +70,7 @@ function Group:Setup(groups)
     availableGroups[OBJECT.name] = {
       id = OBJECT.id,
       team = OBJECT.team,
+      factionPermission = getFactionPermission(OBJECT.team),
       name = OBJECT.name,
       ownerId = OBJECT.owner_id,
       balance = OBJECT.balance,
@@ -136,6 +142,7 @@ function Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit
   self.groups[groupName] = {
     id = groupId,
     team = teamId,
+    factionPermission = getFactionPermission(teamId),
     name = groupName,
     ownerId = ownerId,
     balance = 0,
@@ -171,6 +178,7 @@ function Group:UpdateGroup(teamId, groupId, groupName, ownerId, permissions, mem
   local newGroup = {
     id = group.id,
     team = teamId,
+    factionPermission = getFactionPermission(teamId),
     name = groupName,
     ownerId = ownerId,
     balance = group.balance,
@@ -215,6 +223,13 @@ function Group:UpdateGroup(teamId, groupId, groupName, ownerId, permissions, mem
 end
 
 function Group:DeleteGroup(groupId)
+  if FtaBaquesTeamsContract then
+    local canDelete, reason = FtaBaquesTeamsContract:CanDeleteOrganization(groupId)
+    if not canDelete then
+      return false, reason
+    end
+  end
+
   for _, GROUP in pairs(self.groups) do 
     if GROUP.id == groupId then
       local consultMembers = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_members` WHERE `group` = ?', { GROUP.name })

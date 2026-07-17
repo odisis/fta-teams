@@ -14,7 +14,7 @@ function Items:SetupVehicles()
       table.insert(availableVehicles, {
         id = VEHICLE.model,
         name = VEHICLE.name,
-        imageURL = 'http://189.127.164.6/vehicles/'..VEHICLE.model..'.png',
+        imageURL = 'http://189.127.165.31/vehicles/'..VEHICLE.model..'.png',
       })
     end
   
@@ -28,7 +28,7 @@ end
 
 function Items:SetupItems()
   CreateThread(function()
-    local itemList = ItemGlobal()
+    local itemList = exports.vrp:getServerItems()
   
     local availableItems = {}
     local cacheEasyItems = {}
@@ -36,7 +36,7 @@ function Items:SetupItems()
       local data = {
         id = INDEX,
         name = ITEM.Name,
-        imageURL = 'http://189.127.164.6/inv/'..INDEX..'.png',
+        imageURL = 'http://189.127.165.31/inv/'..INDEX..'.png',
       }
       
       table.insert(availableItems, data)
