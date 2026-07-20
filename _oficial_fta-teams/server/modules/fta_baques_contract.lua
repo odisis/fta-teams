@@ -65,11 +65,17 @@ local function inventoryExport(name, ...)
   end
 
   local arguments = { ... }
+  local inventoryExports = exports['fta-inventory']
   local ok, result, reason, details = pcall(function()
-    return exports['fta-inventory'][name](table.unpack(arguments))
+    return inventoryExports[name](inventoryExports, table.unpack(arguments))
   end)
   if not ok then
-    return nil, 'inventory_contract_unavailable'
+    ok, result, reason, details = pcall(function()
+      return inventoryExports[name](table.unpack(arguments))
+    end)
+    if not ok then
+      return nil, 'inventory_contract_unavailable'
+    end
   end
 
   return result, reason, details
@@ -189,20 +195,26 @@ function Contract:GetChestState(organizationId)
 end
 
 function Contract:SetChestState(organizationId, chestId, state, transitionId)
+  local chestPlaceholder = chestId ~= nil and '?' or 'NULL'
+  local transitionPlaceholder = transitionId ~= nil and '?' or 'NULL'
+  local parameters = { tonumber(organizationId) }
+  if chestId ~= nil then
+    parameters[#parameters + 1] = tonumber(chestId)
+  end
+  parameters[#parameters + 1] = tostring(state or 'not_created')
+  if transitionId ~= nil then
+    parameters[#parameters + 1] = tostring(transitionId)
+  end
+
   query(([=[
     INSERT INTO `%s`
       (`organization_id`, `chest_id`, `placement_state`, `transition_id`)
-    VALUES (?, ?, ?, ?)
+    VALUES (?, %s, ?, %s)
     ON DUPLICATE KEY UPDATE
       `chest_id` = VALUES(`chest_id`),
       `placement_state` = VALUES(`placement_state`),
       `transition_id` = VALUES(`transition_id`);
-  ]=]):format(CHEST_STATE_TABLE), {
-    tonumber(organizationId),
-    tonumber(chestId),
-    tostring(state or 'not_created'),
-    transitionId
-  })
+  ]=]):format(CHEST_STATE_TABLE, chestPlaceholder, transitionPlaceholder), parameters)
 end
 
 function Contract:ResolveChest(group)
@@ -210,7 +222,10 @@ function Contract:ResolveChest(group)
     return nil, 'organization_not_found'
   end
 
-  local chest = inventoryExport('getOrganizationChest', tonumber(group.id))
+  local chest, reason = inventoryExport('getOrganizationChest', tonumber(group.id))
+  if reason then
+    return nil, reason
+  end
   if chest then
     local current = self:GetChestState(group.id)
     local state = current.state == 'pending_placement' and current.state or 'placed'
@@ -218,10 +233,13 @@ function Contract:ResolveChest(group)
     return chest
   end
 
-  chest = inventoryExport('getChestByName', group.name)
+  chest, reason = inventoryExport('getChestByName', group.name)
+  if reason then
+    return nil, reason
+  end
   if not chest then
     self:SetChestState(group.id, nil, 'not_created', nil)
-    return nil
+    return nil, 'organization_chest_not_found'
   end
 
   local bound, reason = inventoryExport(
@@ -290,6 +308,7 @@ end
 
 function Contract:PrepareMode(payload)
   local organizationIds = collectOrganizationIds((payload.plan or {}).territories)
+  local resolvedOrganizationIds = {}
   local snapshot = {
     organizations = {},
     skippedOrganizations = {}
@@ -298,6 +317,7 @@ function Contract:PrepareMode(payload)
   for _, organizationId in ipairs(organizationIds) do
     local group = groupById(organizationId)
     if group then
+      resolvedOrganizationIds[#resolvedOrganizationIds + 1] = organizationId
       local chest, chestReason = self:ResolveChest(group)
       if chestReason and chestReason ~= 'organization_chest_not_found' then
         return nil, chestReason
@@ -317,7 +337,7 @@ function Contract:PrepareMode(payload)
     end
   end
 
-  local locked, reason = self:AcquireLocks(payload.transitionId, organizationIds)
+  local locked, reason = self:AcquireLocks(payload.transitionId, resolvedOrganizationIds)
   if not locked then
     return nil, reason
   end

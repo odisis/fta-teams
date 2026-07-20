@@ -1,4 +1,4 @@
-local _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc = false
+local _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
@@ -31,13 +31,13 @@ local function sendWebhookEmbed(webhook, title, description, fields, color)
 end
 
 local function sucesso(body)
-    _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc = true
+    _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM = true
     print('^6['.. GetCurrentResourceName() ..']^7 SCRIPT AUTENTICADO COM SUCESSO')
 end
 
 local function erro(body)
     local script = GetCurrentResourceName()
-    _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc = false
+    _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM = false
     print('^6['..script..']^7 FALHA NA AUTENTICAÇÃO')
     if body.err == 'INVALID_TOKEN' then 
         local sv_hostname = GetConvar('sv_hostname', 'Not found')
@@ -76,7 +76,7 @@ end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
-    _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc = false
+    _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM = false
     print('^6['.. script ..']^7 FALHA NA CONEXÃO COM A API')
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
@@ -109,7 +109,7 @@ end
 
 Citizen.SetTimeout(1000, keepAuthAlive)
 
-    
+
 local Constructor = {
     modules = {},
     instantiate = function(self, name)
@@ -838,7 +838,7 @@ createModule('server/main', function()
     CreateThread(function ()
       Wait(250)
     
-      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
+      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
         Citizen.Wait(1000)
       end
     
@@ -1212,11 +1212,17 @@ createModule('server/modules/fta_baques_contract', function()
       end
     
       local arguments = { ... }
+      local inventoryExports = exports['fta-inventory']
       local ok, result, reason, details = pcall(function()
-        return exports['fta-inventory'][name](table.unpack(arguments))
+        return inventoryExports[name](inventoryExports, table.unpack(arguments))
       end)
       if not ok then
-        return nil, 'inventory_contract_unavailable'
+        ok, result, reason, details = pcall(function()
+          return inventoryExports[name](table.unpack(arguments))
+        end)
+        if not ok then
+          return nil, 'inventory_contract_unavailable'
+        end
       end
     
       return result, reason, details
@@ -1226,7 +1232,7 @@ createModule('server/modules/fta_baques_contract', function()
       if self.initialized then
         return true
       end
-    
+
       query(([=[
         CREATE TABLE IF NOT EXISTS `%s` (
           `transition_id` VARCHAR(64) NOT NULL,
@@ -1336,20 +1342,25 @@ createModule('server/modules/fta_baques_contract', function()
     end
     
     function Contract:SetChestState(organizationId, chestId, state, transitionId)
+      local chestPlaceholder = chestId ~= nil and '?' or 'NULL'
+      local transitionPlaceholder = transitionId ~= nil and '?' or 'NULL'
+      local parameters = { tonumber(organizationId) }
+      if chestId ~= nil then
+        parameters[#parameters + 1] = tonumber(chestId)
+      end
+      parameters[#parameters + 1] = tostring(state or 'not_created')
+      if transitionId ~= nil then
+        parameters[#parameters + 1] = tostring(transitionId)
+      end
       query(([=[
         INSERT INTO `%s`
           (`organization_id`, `chest_id`, `placement_state`, `transition_id`)
-        VALUES (?, ?, ?, ?)
+        VALUES (?, %s, ?, %s)
         ON DUPLICATE KEY UPDATE
           `chest_id` = VALUES(`chest_id`),
           `placement_state` = VALUES(`placement_state`),
           `transition_id` = VALUES(`transition_id`);
-      ]=]):format(CHEST_STATE_TABLE), {
-        tonumber(organizationId),
-        tonumber(chestId),
-        tostring(state or 'not_created'),
-        transitionId
-      })
+      ]=]):format(CHEST_STATE_TABLE, chestPlaceholder, transitionPlaceholder), parameters)
     end
     
     function Contract:ResolveChest(group)
@@ -1357,7 +1368,10 @@ createModule('server/modules/fta_baques_contract', function()
         return nil, 'organization_not_found'
       end
     
-      local chest = inventoryExport('getOrganizationChest', tonumber(group.id))
+      local chest, reason = inventoryExport('getOrganizationChest', tonumber(group.id))
+      if reason then
+        return nil, reason
+      end
       if chest then
         local current = self:GetChestState(group.id)
         local state = current.state == 'pending_placement' and current.state or 'placed'
@@ -1365,10 +1379,13 @@ createModule('server/modules/fta_baques_contract', function()
         return chest
       end
     
-      chest = inventoryExport('getChestByName', group.name)
+      chest, reason = inventoryExport('getChestByName', group.name)
+      if reason then
+        return nil, reason
+      end
       if not chest then
         self:SetChestState(group.id, nil, 'not_created', nil)
-        return nil
+        return nil, 'organization_chest_not_found'
       end
     
       local bound, reason = inventoryExport(
@@ -1437,6 +1454,7 @@ createModule('server/modules/fta_baques_contract', function()
     
     function Contract:PrepareMode(payload)
       local organizationIds = collectOrganizationIds((payload.plan or {}).territories)
+      local resolvedOrganizationIds = {}
       local snapshot = {
         organizations = {},
         skippedOrganizations = {}
@@ -1445,6 +1463,7 @@ createModule('server/modules/fta_baques_contract', function()
       for _, organizationId in ipairs(organizationIds) do
         local group = groupById(organizationId)
         if group then
+          resolvedOrganizationIds[#resolvedOrganizationIds + 1] = organizationId
           local chest, chestReason = self:ResolveChest(group)
           if chestReason and chestReason ~= 'organization_chest_not_found' then
             return nil, chestReason
@@ -1464,7 +1483,7 @@ createModule('server/modules/fta_baques_contract', function()
         end
       end
     
-      local locked, reason = self:AcquireLocks(payload.transitionId, organizationIds)
+      local locked, reason = self:AcquireLocks(payload.transitionId, resolvedOrganizationIds)
       if not locked then
         return nil, reason
       end
@@ -2648,7 +2667,7 @@ createModule('server/modules/group', function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
-      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
+      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
         Citizen.Wait(1000)
       end
     
@@ -2658,7 +2677,7 @@ createModule('server/modules/group', function()
     CreateThread(function()
       Wait(1500)
     
-      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
+      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
         Citizen.Wait(1000)
       end
     
@@ -2775,7 +2794,7 @@ createModule('server/modules/items', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
+      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
         Citizen.Wait(1000)
       end
     
@@ -2787,7 +2806,7 @@ createModule('server/modules/items', function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
+      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
         Citizen.Wait(1000)
       end
     
@@ -3126,7 +3145,7 @@ createModule('server/modules/ranking', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
+      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
         Citizen.Wait(1000)
       end
     
@@ -3278,7 +3297,7 @@ importModule('server/modules/roles')
 
 createModule('server/api/admin', function()
     function api.getAvailableGroups()
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3315,7 +3334,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getTeams(teamId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3340,7 +3359,7 @@ createModule('server/api/admin', function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3352,7 +3371,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3363,7 +3382,7 @@ createModule('server/api/admin', function()
     end
     
     function api.deleteGroup(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3373,7 +3392,7 @@ createModule('server/api/admin', function()
     end
     
     function api.hasAdminPermission()
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3385,7 +3404,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getPlayerName()
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3397,7 +3416,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRankingRewards()
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3407,7 +3426,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3417,7 +3436,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRescueRewards()
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3427,7 +3446,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3496,6 +3515,22 @@ createModule('server/api/chest', function()
           local chestCreated = exports['fta-inventory']:createChest('TEAM', chestName, chestWeight, permissions, formattedCoordinates, payload)
     
           if chestCreated then
+            local bound, bindReason = exports['fta-inventory']:bindOrganizationChest(
+              chestCreated,
+              playerTeamObject.id
+            )
+            if not bound then
+              print(('[fta-teams] Falha ao entregar itens pendentes ao bau da organizacao %s: %s')
+                :format(tostring(playerTeamObject.id), tostring(bindReason)))
+              TriggerClientEvent(
+                'Notify',
+                playerSource,
+                'denied',
+                'O bau foi criado, mas os itens pendentes ainda nao puderam ser entregues.',
+                10000
+              )
+              return
+            end
             if FtaBaquesTeamsContract then
               FtaBaquesTeamsContract:MarkChestPlaced(playerTeamObject.id, chestCreated)
             end
@@ -3628,7 +3663,7 @@ importModule('server/api/chest')
 
 createModule('server/api/group', function()
     function api.getGroupMembers(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3663,7 +3698,7 @@ createModule('server/api/group', function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3679,7 +3714,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroups(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3687,7 +3722,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupChestLogs(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3697,7 +3732,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupHierarchy(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3705,7 +3740,7 @@ createModule('server/api/group', function()
     end
     
     function api.upgradeRoleHierarchy(groupId, roleId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3715,7 +3750,7 @@ createModule('server/api/group', function()
     end 
     
     function api.downgradeRoleHierarchy(groupId, roleId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3725,7 +3760,7 @@ createModule('server/api/group', function()
     end 
     
     function api.isPlayerInGroup()
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3741,7 +3776,7 @@ createModule('server/api/group', function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3754,7 +3789,7 @@ createModule('server/api/group', function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3767,7 +3802,7 @@ createModule('server/api/group', function()
     end
     
     function api.leaveMember(groupId, memberId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3778,7 +3813,7 @@ createModule('server/api/group', function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
       
@@ -3795,7 +3830,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupBank(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3812,7 +3847,7 @@ createModule('server/api/group', function()
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3825,7 +3860,7 @@ createModule('server/api/group', function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3838,7 +3873,7 @@ createModule('server/api/group', function()
     end
     
     function api.getRoles(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3867,7 +3902,7 @@ createModule('server/api/group', function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3877,7 +3912,7 @@ createModule('server/api/group', function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3887,7 +3922,7 @@ createModule('server/api/group', function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3897,7 +3932,7 @@ createModule('server/api/group', function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3905,7 +3940,7 @@ createModule('server/api/group', function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     
@@ -3994,7 +4029,7 @@ createModule('server/api/utils', function()
     end
     
     function api.getProfileImage()
-      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
+      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
         return
       end
     

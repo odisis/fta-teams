@@ -55,6 +55,22 @@ function api.tryCreateChest()
       local chestCreated = exports['fta-inventory']:createChest('TEAM', chestName, chestWeight, permissions, formattedCoordinates, payload)
 
       if chestCreated then
+        local bound, bindReason = exports['fta-inventory']:bindOrganizationChest(
+          chestCreated,
+          playerTeamObject.id
+        )
+        if not bound then
+          print(('[fta-teams] Falha ao entregar itens pendentes ao bau da organizacao %s: %s')
+            :format(tostring(playerTeamObject.id), tostring(bindReason)))
+          TriggerClientEvent(
+            'Notify',
+            playerSource,
+            'denied',
+            'O bau foi criado, mas os itens pendentes ainda nao puderam ser entregues.',
+            10000
+          )
+          return
+        end
         if FtaBaquesTeamsContract then
           FtaBaquesTeamsContract:MarkChestPlaced(playerTeamObject.id, chestCreated)
         end
