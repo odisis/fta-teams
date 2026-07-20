@@ -32,8 +32,13 @@ local function sameNullableId(left, right)
   return sameId(left, right)
 end
 
+local function positiveId(value)
+  value = tonumber(value)
+  return value and value > 0 and value or nil
+end
+
 local function groupById(groupId)
-  groupId = tonumber(groupId)
+  groupId = positiveId(groupId)
   if not groupId or not Group then
     return nil
   end
@@ -267,7 +272,7 @@ local function collectOrganizationIds(territories)
   local seen = {}
 
   local function add(value)
-    value = tonumber(value)
+    value = positiveId(value)
     if value and not seen[value] then
       seen[value] = true
       values[#values + 1] = value
@@ -286,29 +291,30 @@ end
 function Contract:PrepareMode(payload)
   local organizationIds = collectOrganizationIds((payload.plan or {}).territories)
   local snapshot = {
-    organizations = {}
+    organizations = {},
+    skippedOrganizations = {}
   }
 
   for _, organizationId in ipairs(organizationIds) do
     local group = groupById(organizationId)
-    if not group then
-      return nil, 'organization_not_found'
-    end
+    if group then
+      local chest, chestReason = self:ResolveChest(group)
+      if chestReason and chestReason ~= 'organization_chest_not_found' then
+        return nil, chestReason
+      end
 
-    local chest, chestReason = self:ResolveChest(group)
-    if chestReason and chestReason ~= 'organization_chest_not_found' then
-      return nil, chestReason
+      local previousState = self:GetChestState(organizationId)
+      snapshot.organizations[#snapshot.organizations + 1] = {
+        organizationId = organizationId,
+        ownerId = tonumber(group.ownerId),
+        name = group.name,
+        previousState = previousState.state,
+        chestId = chest and tonumber(chest.id) or nil,
+        coordinates = chest and copy(chest.coordinates or {}) or {}
+      }
+    else
+      snapshot.skippedOrganizations[#snapshot.skippedOrganizations + 1] = organizationId
     end
-
-    local previousState = self:GetChestState(organizationId)
-    snapshot.organizations[#snapshot.organizations + 1] = {
-      organizationId = organizationId,
-      ownerId = tonumber(group.ownerId),
-      name = group.name,
-      previousState = previousState.state,
-      chestId = chest and tonumber(chest.id) or nil,
-      coordinates = chest and copy(chest.coordinates or {}) or {}
-    }
   end
 
   local locked, reason = self:AcquireLocks(payload.transitionId, organizationIds)
@@ -375,20 +381,23 @@ function Contract:PrepareControl(payload)
   local policeControl = resultActorKind(payload) == 'police_department'
     or nextOwner.controlState == 'pacified'
 
-  if not policeControl and nextOwner.organizationId then
-    if not groupById(nextOwner.organizationId) then
+  local previousOrganizationId = positiveId(previous.organizationId)
+  local nextOrganizationId = positiveId(nextOwner.organizationId)
+
+  if not policeControl and nextOrganizationId then
+    if not groupById(nextOrganizationId) then
       return nil, 'organization_not_found'
     end
   end
 
   local organizationIds = {}
-  if tonumber(previous.organizationId) then
-    organizationIds[#organizationIds + 1] = tonumber(previous.organizationId)
+  if previousOrganizationId then
+    organizationIds[#organizationIds + 1] = previousOrganizationId
   end
-  if tonumber(nextOwner.organizationId)
-    and not sameId(previous.organizationId, nextOwner.organizationId)
+  if nextOrganizationId
+    and not sameId(previousOrganizationId, nextOrganizationId)
   then
-    organizationIds[#organizationIds + 1] = tonumber(nextOwner.organizationId)
+    organizationIds[#organizationIds + 1] = nextOrganizationId
   end
 
   local locked, reason = self:AcquireLocks(payload.transitionId, organizationIds)
@@ -411,7 +420,7 @@ function Contract:PrepareControl(payload)
         transitionId = previousRow.transition_id
       } or nil,
       next = {
-        organizationId = policeControl and nil or tonumber(nextOwner.organizationId),
+        organizationId = policeControl and nil or nextOrganizationId,
         teamId = nextOwner.teamId and tostring(nextOwner.teamId) or nil,
         controlState = tostring(nextOwner.controlState or 'faction')
       }
@@ -430,15 +439,22 @@ function Contract:Prepare(payload)
   if existing then
     local organizationIds = {}
     for _, entry in ipairs(existing.snapshot.organizations or {}) do
-      organizationIds[#organizationIds + 1] = tonumber(entry.organizationId)
+      local organizationId = positiveId(entry.organizationId)
+      if organizationId then
+        organizationIds[#organizationIds + 1] = organizationId
+      end
     end
     local territory = existing.snapshot.territory
     if territory then
-      if territory.previous and tonumber(territory.previous.organizationId) then
-        organizationIds[#organizationIds + 1] = tonumber(territory.previous.organizationId)
+      local previousOrganizationId = territory.previous
+        and positiveId(territory.previous.organizationId)
+      local nextOrganizationId = territory.next
+        and positiveId(territory.next.organizationId)
+      if previousOrganizationId then
+        organizationIds[#organizationIds + 1] = previousOrganizationId
       end
-      if territory.next and tonumber(territory.next.organizationId) then
-        organizationIds[#organizationIds + 1] = tonumber(territory.next.organizationId)
+      if nextOrganizationId then
+        organizationIds[#organizationIds + 1] = nextOrganizationId
       end
     end
     local locked, lockReason = self:AcquireLocks(transitionId, organizationIds)

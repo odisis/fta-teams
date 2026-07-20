@@ -1,4 +1,4 @@
-local _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc = false
+local _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
@@ -31,13 +31,13 @@ local function sendWebhookEmbed(webhook, title, description, fields, color)
 end
 
 local function sucesso(body)
-    _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc = true
+    _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc = true
     print('^6['.. GetCurrentResourceName() ..']^7 SCRIPT AUTENTICADO COM SUCESSO')
 end
 
 local function erro(body)
     local script = GetCurrentResourceName()
-    _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc = false
+    _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc = false
     print('^6['..script..']^7 FALHA NA AUTENTICAÇÃO')
     if body.err == 'INVALID_TOKEN' then 
         local sv_hostname = GetConvar('sv_hostname', 'Not found')
@@ -76,7 +76,7 @@ end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
-    _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc = false
+    _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc = false
     print('^6['.. script ..']^7 FALHA NA CONEXÃO COM A API')
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
@@ -838,7 +838,7 @@ createModule('server/main', function()
     CreateThread(function ()
       Wait(250)
     
-      while not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc do
+      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
         Citizen.Wait(1000)
       end
     
@@ -1179,8 +1179,13 @@ createModule('server/modules/fta_baques_contract', function()
       return sameId(left, right)
     end
     
+    local function positiveId(value)
+      value = tonumber(value)
+      return value and value > 0 and value or nil
+    end
+    
     local function groupById(groupId)
-      groupId = tonumber(groupId)
+      groupId = positiveId(groupId)
       if not groupId or not Group then
         return nil
       end
@@ -1414,7 +1419,7 @@ createModule('server/modules/fta_baques_contract', function()
       local seen = {}
     
       local function add(value)
-        value = tonumber(value)
+        value = positiveId(value)
         if value and not seen[value] then
           seen[value] = true
           values[#values + 1] = value
@@ -1433,29 +1438,30 @@ createModule('server/modules/fta_baques_contract', function()
     function Contract:PrepareMode(payload)
       local organizationIds = collectOrganizationIds((payload.plan or {}).territories)
       local snapshot = {
-        organizations = {}
+        organizations = {},
+        skippedOrganizations = {}
       }
     
       for _, organizationId in ipairs(organizationIds) do
         local group = groupById(organizationId)
-        if not group then
-          return nil, 'organization_not_found'
-        end
+        if group then
+          local chest, chestReason = self:ResolveChest(group)
+          if chestReason and chestReason ~= 'organization_chest_not_found' then
+            return nil, chestReason
+          end
     
-        local chest, chestReason = self:ResolveChest(group)
-        if chestReason and chestReason ~= 'organization_chest_not_found' then
-          return nil, chestReason
+          local previousState = self:GetChestState(organizationId)
+          snapshot.organizations[#snapshot.organizations + 1] = {
+            organizationId = organizationId,
+            ownerId = tonumber(group.ownerId),
+            name = group.name,
+            previousState = previousState.state,
+            chestId = chest and tonumber(chest.id) or nil,
+            coordinates = chest and copy(chest.coordinates or {}) or {}
+          }
+        else
+          snapshot.skippedOrganizations[#snapshot.skippedOrganizations + 1] = organizationId
         end
-    
-        local previousState = self:GetChestState(organizationId)
-        snapshot.organizations[#snapshot.organizations + 1] = {
-          organizationId = organizationId,
-          ownerId = tonumber(group.ownerId),
-          name = group.name,
-          previousState = previousState.state,
-          chestId = chest and tonumber(chest.id) or nil,
-          coordinates = chest and copy(chest.coordinates or {}) or {}
-        }
       end
     
       local locked, reason = self:AcquireLocks(payload.transitionId, organizationIds)
@@ -1522,20 +1528,23 @@ createModule('server/modules/fta_baques_contract', function()
       local policeControl = resultActorKind(payload) == 'police_department'
         or nextOwner.controlState == 'pacified'
     
-      if not policeControl and nextOwner.organizationId then
-        if not groupById(nextOwner.organizationId) then
+      local previousOrganizationId = positiveId(previous.organizationId)
+      local nextOrganizationId = positiveId(nextOwner.organizationId)
+    
+      if not policeControl and nextOrganizationId then
+        if not groupById(nextOrganizationId) then
           return nil, 'organization_not_found'
         end
       end
     
       local organizationIds = {}
-      if tonumber(previous.organizationId) then
-        organizationIds[#organizationIds + 1] = tonumber(previous.organizationId)
+      if previousOrganizationId then
+        organizationIds[#organizationIds + 1] = previousOrganizationId
       end
-      if tonumber(nextOwner.organizationId)
-        and not sameId(previous.organizationId, nextOwner.organizationId)
+      if nextOrganizationId
+        and not sameId(previousOrganizationId, nextOrganizationId)
       then
-        organizationIds[#organizationIds + 1] = tonumber(nextOwner.organizationId)
+        organizationIds[#organizationIds + 1] = nextOrganizationId
       end
     
       local locked, reason = self:AcquireLocks(payload.transitionId, organizationIds)
@@ -1558,7 +1567,7 @@ createModule('server/modules/fta_baques_contract', function()
             transitionId = previousRow.transition_id
           } or nil,
           next = {
-            organizationId = policeControl and nil or tonumber(nextOwner.organizationId),
+            organizationId = policeControl and nil or nextOrganizationId,
             teamId = nextOwner.teamId and tostring(nextOwner.teamId) or nil,
             controlState = tostring(nextOwner.controlState or 'faction')
           }
@@ -1577,15 +1586,22 @@ createModule('server/modules/fta_baques_contract', function()
       if existing then
         local organizationIds = {}
         for _, entry in ipairs(existing.snapshot.organizations or {}) do
-          organizationIds[#organizationIds + 1] = tonumber(entry.organizationId)
+          local organizationId = positiveId(entry.organizationId)
+          if organizationId then
+            organizationIds[#organizationIds + 1] = organizationId
+          end
         end
         local territory = existing.snapshot.territory
         if territory then
-          if territory.previous and tonumber(territory.previous.organizationId) then
-            organizationIds[#organizationIds + 1] = tonumber(territory.previous.organizationId)
+          local previousOrganizationId = territory.previous
+            and positiveId(territory.previous.organizationId)
+          local nextOrganizationId = territory.next
+            and positiveId(territory.next.organizationId)
+          if previousOrganizationId then
+            organizationIds[#organizationIds + 1] = previousOrganizationId
           end
-          if territory.next and tonumber(territory.next.organizationId) then
-            organizationIds[#organizationIds + 1] = tonumber(territory.next.organizationId)
+          if nextOrganizationId then
+            organizationIds[#organizationIds + 1] = nextOrganizationId
           end
         end
         local locked, lockReason = self:AcquireLocks(transitionId, organizationIds)
@@ -2632,7 +2648,7 @@ createModule('server/modules/group', function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
-      while not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc do
+      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
         Citizen.Wait(1000)
       end
     
@@ -2642,7 +2658,7 @@ createModule('server/modules/group', function()
     CreateThread(function()
       Wait(1500)
     
-      while not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc do
+      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
         Citizen.Wait(1000)
       end
     
@@ -2759,7 +2775,7 @@ createModule('server/modules/items', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc do
+      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
         Citizen.Wait(1000)
       end
     
@@ -2771,7 +2787,7 @@ createModule('server/modules/items', function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc do
+      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
         Citizen.Wait(1000)
       end
     
@@ -3110,7 +3126,7 @@ createModule('server/modules/ranking', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc do
+      while not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc do
         Citizen.Wait(1000)
       end
     
@@ -3262,7 +3278,7 @@ importModule('server/modules/roles')
 
 createModule('server/api/admin', function()
     function api.getAvailableGroups()
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3299,7 +3315,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getTeams(teamId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3324,7 +3340,7 @@ createModule('server/api/admin', function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3336,7 +3352,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3347,7 +3363,7 @@ createModule('server/api/admin', function()
     end
     
     function api.deleteGroup(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3357,7 +3373,7 @@ createModule('server/api/admin', function()
     end
     
     function api.hasAdminPermission()
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3369,7 +3385,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getPlayerName()
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3381,7 +3397,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRankingRewards()
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3391,7 +3407,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3401,7 +3417,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRescueRewards()
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3411,7 +3427,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3612,7 +3628,7 @@ importModule('server/api/chest')
 
 createModule('server/api/group', function()
     function api.getGroupMembers(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3647,7 +3663,7 @@ createModule('server/api/group', function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3663,7 +3679,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroups(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3671,7 +3687,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupChestLogs(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3681,7 +3697,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupHierarchy(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3689,7 +3705,7 @@ createModule('server/api/group', function()
     end
     
     function api.upgradeRoleHierarchy(groupId, roleId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3699,7 +3715,7 @@ createModule('server/api/group', function()
     end 
     
     function api.downgradeRoleHierarchy(groupId, roleId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3709,7 +3725,7 @@ createModule('server/api/group', function()
     end 
     
     function api.isPlayerInGroup()
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3725,7 +3741,7 @@ createModule('server/api/group', function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3738,7 +3754,7 @@ createModule('server/api/group', function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3751,7 +3767,7 @@ createModule('server/api/group', function()
     end
     
     function api.leaveMember(groupId, memberId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3762,7 +3778,7 @@ createModule('server/api/group', function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
       
@@ -3779,7 +3795,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupBank(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3796,7 +3812,7 @@ createModule('server/api/group', function()
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3809,7 +3825,7 @@ createModule('server/api/group', function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3822,7 +3838,7 @@ createModule('server/api/group', function()
     end
     
     function api.getRoles(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3851,7 +3867,7 @@ createModule('server/api/group', function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3861,7 +3877,7 @@ createModule('server/api/group', function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3871,7 +3887,7 @@ createModule('server/api/group', function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3881,7 +3897,7 @@ createModule('server/api/group', function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3889,7 +3905,7 @@ createModule('server/api/group', function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
@@ -3978,7 +3994,7 @@ createModule('server/api/utils', function()
     end
     
     function api.getProfileImage()
-      if not _XAeZFhsWGLnWmKznzRdULZbqJWLMYfJRFAGFjHktxLVhWBNzVroGTaJuXmDTHcnc then
+      if not _PxPYluZdEiUNCBigDFkholiZPlnQDvGodDKsUbFaDWeLKXlmBowRSnWZmJTwLTgc then
         return
       end
     
