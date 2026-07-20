@@ -748,19 +748,37 @@ function Contract:CanDeleteOrganization(organizationId)
     return false, 'organization_has_pending_migration'
   end
 
-  local territory = query(
-    ('SELECT 1 FROM `%s` WHERE `organization_id` = ? LIMIT 1;'):format(OWNERSHIP_TABLE),
-    { organizationId }
-  )[1]
-  if territory then
-    return false, 'organization_controls_territory'
-  end
-
   local chestState = self:GetChestState(organizationId)
   if chestState.state == 'pending_placement' then
     return false, 'organization_chest_pending_placement'
   end
 
+  return true
+end
+
+function Contract:NotifyOrganizationDeleted(organizationId, actorPassport)
+  self:EnsureTables()
+  organizationId = tonumber(organizationId)
+  if not organizationId then
+    return false, 'organization_id_required'
+  end
+
+  if GetResourceState('fta-baques') == 'started' then
+    local ok, handled, reason = pcall(function()
+      return exports['fta-baques']:HandleOrganizationDeleted(
+        organizationId,
+        actorPassport
+      )
+    end)
+    if not ok or handled ~= true then
+      return false, reason or 'fta_baques_organization_cleanup_failed'
+    end
+  end
+
+  query(
+    ('DELETE FROM `%s` WHERE `organization_id` = ?;'):format(OWNERSHIP_TABLE),
+    { organizationId }
+  )
   return true
 end
 
@@ -817,4 +835,8 @@ end)
 
 exports('canDeleteOrganizationForFtaBaques', function(organizationId)
   return Contract:CanDeleteOrganization(organizationId)
+end)
+
+exports('notifyOrganizationDeletedForFtaBaques', function(organizationId, actorPassport)
+  return Contract:NotifyOrganizationDeleted(organizationId, actorPassport)
 end)

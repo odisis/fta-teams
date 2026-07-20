@@ -244,6 +244,21 @@ function Group:DeleteGroup(groupId)
 
         self.groups[GROUP.name] = nil
 
+        if FtaBaquesTeamsContract
+          and type(FtaBaquesTeamsContract.NotifyOrganizationDeleted) == 'function'
+        then
+          local notified, notifyReason = FtaBaquesTeamsContract:NotifyOrganizationDeleted(
+            GROUP.id,
+            GROUP.ownerId
+          )
+          if not notified then
+            print(('[fta-teams] Organizacao %s excluida; reconciliacao territorial pendente: %s'):format(
+              tostring(GROUP.id),
+              tostring(notifyReason)
+            ))
+          end
+        end
+
         return true
       end
 

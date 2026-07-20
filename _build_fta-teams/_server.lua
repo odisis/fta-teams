@@ -1,4 +1,4 @@
-local _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM = false
+local _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
@@ -31,13 +31,13 @@ local function sendWebhookEmbed(webhook, title, description, fields, color)
 end
 
 local function sucesso(body)
-    _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM = true
+    _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp = true
     print('^6['.. GetCurrentResourceName() ..']^7 SCRIPT AUTENTICADO COM SUCESSO')
 end
 
 local function erro(body)
     local script = GetCurrentResourceName()
-    _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM = false
+    _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp = false
     print('^6['..script..']^7 FALHA NA AUTENTICAÇÃO')
     if body.err == 'INVALID_TOKEN' then 
         local sv_hostname = GetConvar('sv_hostname', 'Not found')
@@ -76,7 +76,7 @@ end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
-    _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM = false
+    _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp = false
     print('^6['.. script ..']^7 FALHA NA CONEXÃO COM A API')
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
@@ -109,7 +109,7 @@ end
 
 Citizen.SetTimeout(1000, keepAuthAlive)
 
-
+    
 local Constructor = {
     modules = {},
     instantiate = function(self, name)
@@ -838,7 +838,7 @@ createModule('server/main', function()
     CreateThread(function ()
       Wait(250)
     
-      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
+      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
         Citizen.Wait(1000)
       end
     
@@ -1232,7 +1232,7 @@ createModule('server/modules/fta_baques_contract', function()
       if self.initialized then
         return true
       end
-
+    
       query(([=[
         CREATE TABLE IF NOT EXISTS `%s` (
           `transition_id` VARCHAR(64) NOT NULL,
@@ -1352,6 +1352,7 @@ createModule('server/modules/fta_baques_contract', function()
       if transitionId ~= nil then
         parameters[#parameters + 1] = tostring(transitionId)
       end
+    
       query(([=[
         INSERT INTO `%s`
           (`organization_id`, `chest_id`, `placement_state`, `transition_id`)
@@ -1894,19 +1895,37 @@ createModule('server/modules/fta_baques_contract', function()
         return false, 'organization_has_pending_migration'
       end
     
-      local territory = query(
-        ('SELECT 1 FROM `%s` WHERE `organization_id` = ? LIMIT 1;'):format(OWNERSHIP_TABLE),
-        { organizationId }
-      )[1]
-      if territory then
-        return false, 'organization_controls_territory'
-      end
-    
       local chestState = self:GetChestState(organizationId)
       if chestState.state == 'pending_placement' then
         return false, 'organization_chest_pending_placement'
       end
     
+      return true
+    end
+    
+    function Contract:NotifyOrganizationDeleted(organizationId, actorPassport)
+      self:EnsureTables()
+      organizationId = tonumber(organizationId)
+      if not organizationId then
+        return false, 'organization_id_required'
+      end
+    
+      if GetResourceState('fta-baques') == 'started' then
+        local ok, handled, reason = pcall(function()
+          return exports['fta-baques']:HandleOrganizationDeleted(
+            organizationId,
+            actorPassport
+          )
+        end)
+        if not ok or handled ~= true then
+          return false, reason or 'fta_baques_organization_cleanup_failed'
+        end
+      end
+    
+      query(
+        ('DELETE FROM `%s` WHERE `organization_id` = ?;'):format(OWNERSHIP_TABLE),
+        { organizationId }
+      )
       return true
     end
     
@@ -1963,6 +1982,10 @@ createModule('server/modules/fta_baques_contract', function()
     
     exports('canDeleteOrganizationForFtaBaques', function(organizationId)
       return Contract:CanDeleteOrganization(organizationId)
+    end)
+    
+    exports('notifyOrganizationDeletedForFtaBaques', function(organizationId, actorPassport)
+      return Contract:NotifyOrganizationDeleted(organizationId, actorPassport)
     end)
     
 end)
@@ -2214,6 +2237,21 @@ createModule('server/modules/group', function()
             exports['oxmysql']:executeSync('DELETE FROM `fta_groups` WHERE `id` = ?', { GROUP.id })
     
             self.groups[GROUP.name] = nil
+    
+            if FtaBaquesTeamsContract
+              and type(FtaBaquesTeamsContract.NotifyOrganizationDeleted) == 'function'
+            then
+              local notified, notifyReason = FtaBaquesTeamsContract:NotifyOrganizationDeleted(
+                GROUP.id,
+                GROUP.ownerId
+              )
+              if not notified then
+                print(('[fta-teams] Organizacao %s excluida; reconciliacao territorial pendente: %s'):format(
+                  tostring(GROUP.id),
+                  tostring(notifyReason)
+                ))
+              end
+            end
     
             return true
           end
@@ -2667,7 +2705,7 @@ createModule('server/modules/group', function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
-      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
+      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
         Citizen.Wait(1000)
       end
     
@@ -2677,7 +2715,7 @@ createModule('server/modules/group', function()
     CreateThread(function()
       Wait(1500)
     
-      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
+      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
         Citizen.Wait(1000)
       end
     
@@ -2794,7 +2832,7 @@ createModule('server/modules/items', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
+      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
         Citizen.Wait(1000)
       end
     
@@ -2806,7 +2844,7 @@ createModule('server/modules/items', function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
+      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
         Citizen.Wait(1000)
       end
     
@@ -3145,7 +3183,7 @@ createModule('server/modules/ranking', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM do
+      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
         Citizen.Wait(1000)
       end
     
@@ -3297,7 +3335,7 @@ importModule('server/modules/roles')
 
 createModule('server/api/admin', function()
     function api.getAvailableGroups()
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3334,7 +3372,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getTeams(teamId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3359,7 +3397,7 @@ createModule('server/api/admin', function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3371,7 +3409,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3382,7 +3420,7 @@ createModule('server/api/admin', function()
     end
     
     function api.deleteGroup(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3392,7 +3430,7 @@ createModule('server/api/admin', function()
     end
     
     function api.hasAdminPermission()
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3404,7 +3442,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getPlayerName()
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3416,7 +3454,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRankingRewards()
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3426,7 +3464,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3436,7 +3474,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRescueRewards()
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3446,7 +3484,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3663,7 +3701,7 @@ importModule('server/api/chest')
 
 createModule('server/api/group', function()
     function api.getGroupMembers(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3698,7 +3736,7 @@ createModule('server/api/group', function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3714,7 +3752,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroups(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3722,7 +3760,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupChestLogs(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3732,7 +3770,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupHierarchy(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3740,7 +3778,7 @@ createModule('server/api/group', function()
     end
     
     function api.upgradeRoleHierarchy(groupId, roleId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3750,7 +3788,7 @@ createModule('server/api/group', function()
     end 
     
     function api.downgradeRoleHierarchy(groupId, roleId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3760,7 +3798,7 @@ createModule('server/api/group', function()
     end 
     
     function api.isPlayerInGroup()
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3776,7 +3814,7 @@ createModule('server/api/group', function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3789,7 +3827,7 @@ createModule('server/api/group', function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3802,7 +3840,7 @@ createModule('server/api/group', function()
     end
     
     function api.leaveMember(groupId, memberId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3813,7 +3851,7 @@ createModule('server/api/group', function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
       
@@ -3830,7 +3868,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupBank(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3847,7 +3885,7 @@ createModule('server/api/group', function()
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3860,7 +3898,7 @@ createModule('server/api/group', function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3873,7 +3911,7 @@ createModule('server/api/group', function()
     end
     
     function api.getRoles(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3902,7 +3940,7 @@ createModule('server/api/group', function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3912,7 +3950,7 @@ createModule('server/api/group', function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3922,7 +3960,7 @@ createModule('server/api/group', function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3932,7 +3970,7 @@ createModule('server/api/group', function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -3940,7 +3978,7 @@ createModule('server/api/group', function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
@@ -4029,7 +4067,7 @@ createModule('server/api/utils', function()
     end
     
     function api.getProfileImage()
-      if not _CCwGYRzZTmsUClBZiGHdBJOarLeWyYfDRfUzMBegnVveZJClmHGujpepDeJfcCUM then
+      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
         return
       end
     
