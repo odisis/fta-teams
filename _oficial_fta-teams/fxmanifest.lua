@@ -6,6 +6,7 @@ ui_page_preload 'yes'
 
 files {
   'config/shared/*.lua',
+	'rescue.json',
 
 	'web/build/*.*',
   'web/build/**/*.*'
