@@ -1,4 +1,4 @@
-local _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp = false
+local _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
@@ -31,13 +31,13 @@ local function sendWebhookEmbed(webhook, title, description, fields, color)
 end
 
 local function sucesso(body)
-    _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp = true
+    _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR = true
     print('^6['.. GetCurrentResourceName() ..']^7 SCRIPT AUTENTICADO COM SUCESSO')
 end
 
 local function erro(body)
     local script = GetCurrentResourceName()
-    _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp = false
+    _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR = false
     print('^6['..script..']^7 FALHA NA AUTENTICAÇÃO')
     if body.err == 'INVALID_TOKEN' then 
         local sv_hostname = GetConvar('sv_hostname', 'Not found')
@@ -76,7 +76,7 @@ end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
-    _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp = false
+    _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR = false
     print('^6['.. script ..']^7 FALHA NA CONEXÃO COM A API')
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
@@ -838,7 +838,7 @@ createModule('server/main', function()
     CreateThread(function ()
       Wait(250)
     
-      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
+      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
         Citizen.Wait(1000)
       end
     
@@ -1070,6 +1070,12 @@ createModule('server/modules/exports', function()
     
       return groupData
     end)
+
+    -- Consumers must not treat an empty catalog as authoritative until the
+    -- authenticated database bootstrap has completed.
+    exports('isGroupsReady', function()
+      return Group:IsGroupsReady()
+    end)
     
     --[[ PEGAR GRUPO PELO ID ]]
     exports('getGroup', function(groupId)
@@ -1158,7 +1164,7 @@ createModule('server/modules/fta_baques_contract', function()
     local function query(sql, parameters)
       return exports['oxmysql']:executeSync(sql, parameters or {}) or {}
     end
-    
+
     local function copy(value)
       if type(value) ~= 'table' then
         return value
@@ -1993,7 +1999,8 @@ importModule('server/modules/fta_baques_contract')
 
 createModule('server/modules/group', function()
     _G.Group = {
-      groups = {}
+      groups = {},
+      groupsReady = false
     }
     
     local function getFactionPermission(teamId)
@@ -2009,6 +2016,10 @@ createModule('server/modules/group', function()
       return self.groups
     end
     
+    function Group:IsGroupsReady()
+      return self.groupsReady == true
+    end
+
     function Group:GetGroupById(groupId)
       for _, GROUP in pairs(self.groups) do
         if GROUP.id == groupId then 
@@ -2055,6 +2066,7 @@ createModule('server/modules/group', function()
     end
     
     function Group:Setup(groups)
+      self.groupsReady = false
       local availableGroups = {}
     
       for _, OBJECT in ipairs(groups) do
@@ -2089,6 +2101,7 @@ createModule('server/modules/group', function()
       end
     
       self.groups = availableGroups
+      self.groupsReady = true
     end
     
     function Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit)
@@ -2224,7 +2237,7 @@ createModule('server/modules/group', function()
         end
       end
     
-      for _, GROUP in pairs(self.groups) do 
+      for _, GROUP in pairs(self.groups) do
         if GROUP.id == groupId then
           local consultMembers = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_members` WHERE `group` = ?', { GROUP.name })
     
@@ -2705,7 +2718,7 @@ createModule('server/modules/group', function()
     end
     
     AddEventHandler('Connect', function(Passport, source, bool)
-      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
+      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
         Citizen.Wait(1000)
       end
     
@@ -2715,7 +2728,7 @@ createModule('server/modules/group', function()
     CreateThread(function()
       Wait(1500)
     
-      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
+      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
         Citizen.Wait(1000)
       end
     
@@ -2832,7 +2845,7 @@ createModule('server/modules/items', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
+      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
         Citizen.Wait(1000)
       end
     
@@ -2844,7 +2857,7 @@ createModule('server/modules/items', function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
+      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
         Citizen.Wait(1000)
       end
     
@@ -3183,7 +3196,7 @@ createModule('server/modules/ranking', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp do
+      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
         Citizen.Wait(1000)
       end
     
@@ -3335,7 +3348,7 @@ importModule('server/modules/roles')
 
 createModule('server/api/admin', function()
     function api.getAvailableGroups()
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3372,7 +3385,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getTeams(teamId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3397,7 +3410,7 @@ createModule('server/api/admin', function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3409,7 +3422,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3420,7 +3433,7 @@ createModule('server/api/admin', function()
     end
     
     function api.deleteGroup(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3430,7 +3443,7 @@ createModule('server/api/admin', function()
     end
     
     function api.hasAdminPermission()
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3442,7 +3455,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getPlayerName()
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3454,7 +3467,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRankingRewards()
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3464,7 +3477,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3474,7 +3487,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRescueRewards()
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3484,7 +3497,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3701,7 +3714,7 @@ importModule('server/api/chest')
 
 createModule('server/api/group', function()
     function api.getGroupMembers(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3736,7 +3749,7 @@ createModule('server/api/group', function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3752,7 +3765,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroups(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3760,7 +3773,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupChestLogs(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3770,7 +3783,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupHierarchy(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3778,7 +3791,7 @@ createModule('server/api/group', function()
     end
     
     function api.upgradeRoleHierarchy(groupId, roleId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3788,7 +3801,7 @@ createModule('server/api/group', function()
     end 
     
     function api.downgradeRoleHierarchy(groupId, roleId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3798,7 +3811,7 @@ createModule('server/api/group', function()
     end 
     
     function api.isPlayerInGroup()
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3814,7 +3827,7 @@ createModule('server/api/group', function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3827,7 +3840,7 @@ createModule('server/api/group', function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3840,7 +3853,7 @@ createModule('server/api/group', function()
     end
     
     function api.leaveMember(groupId, memberId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3851,7 +3864,7 @@ createModule('server/api/group', function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
       
@@ -3868,7 +3881,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupBank(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3885,7 +3898,7 @@ createModule('server/api/group', function()
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3898,7 +3911,7 @@ createModule('server/api/group', function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3911,7 +3924,7 @@ createModule('server/api/group', function()
     end
     
     function api.getRoles(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3940,7 +3953,7 @@ createModule('server/api/group', function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3950,7 +3963,7 @@ createModule('server/api/group', function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3960,7 +3973,7 @@ createModule('server/api/group', function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3970,7 +3983,7 @@ createModule('server/api/group', function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -3978,7 +3991,7 @@ createModule('server/api/group', function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     
@@ -4067,7 +4080,7 @@ createModule('server/api/utils', function()
     end
     
     function api.getProfileImage()
-      if not _OArWtBfhrjITljNRQtMklYLyNewJZdfmBKaFARHSEUquSebCTIXXTqKwCGAzrqkp then
+      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
         return
       end
     

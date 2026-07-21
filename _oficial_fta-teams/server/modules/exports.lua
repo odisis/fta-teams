@@ -13,6 +13,12 @@ exports('getGroups', function()
   return groupData
 end)
 
+-- Consumers must not treat an empty catalog as authoritative until the
+-- authenticated database bootstrap has completed.
+exports('isGroupsReady', function()
+  return Group:IsGroupsReady()
+end)
+
 --[[ PEGAR GRUPO PELO ID ]]
 exports('getGroup', function(groupId)
   local groupData = Group:GetGroupById(tonumber(groupId)) or Group:GetGroups(groupId)

@@ -1,5 +1,6 @@
 _G.Group = {
-  groups = {}
+  groups = {},
+  groupsReady = false
 }
 
 local function getFactionPermission(teamId)
@@ -13,6 +14,10 @@ function Group:GetGroups(groupName)
   end
 
   return self.groups
+end
+
+function Group:IsGroupsReady()
+  return self.groupsReady == true
 end
 
 function Group:GetGroupById(groupId)
@@ -61,6 +66,7 @@ function Group:UpdateMemberRescue(groupId, playerId, rescueWave)
 end
 
 function Group:Setup(groups)
+  self.groupsReady = false
   local availableGroups = {}
 
   for _, OBJECT in ipairs(groups) do
@@ -95,6 +101,7 @@ function Group:Setup(groups)
   end
 
   self.groups = availableGroups
+  self.groupsReady = true
 end
 
 function Group:CreateGroup(teamId, groupName, ownerId, permissions, membersLimit)
@@ -230,7 +237,7 @@ function Group:DeleteGroup(groupId)
     end
   end
 
-  for _, GROUP in pairs(self.groups) do 
+  for _, GROUP in pairs(self.groups) do
     if GROUP.id == groupId then
       local consultMembers = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_members` WHERE `group` = ?', { GROUP.name })
 
