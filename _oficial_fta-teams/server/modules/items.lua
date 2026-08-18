@@ -7,7 +7,7 @@ _G.Items = {
 
 function Items:SetupVehicles()
   CreateThread(function()
-    local vehicleList = exports['nation-garages']:getVehList()
+    local vehicleList = exports['fta-garages']:getVehList()
   
     local availableVehicles = {}
     for INDEX, VEHICLE in pairs(vehicleList) do 

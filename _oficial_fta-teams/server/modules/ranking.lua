@@ -111,7 +111,7 @@ function Ranking:GiveVehicle(playerId, vehicle, duration, durationType)
   local timestamp = os.time()
   
   if durationType == 'PERMANENT' then 
-    exports['nation-garages']:addUserVehicle(vehicle, playerId, { type = 'vip' })
+    exports['fta-garages']:addUserVehicle(vehicle, playerId, { type = 'vip' })
     return true
   end
   
@@ -130,7 +130,7 @@ function Ranking:GiveVehicle(playerId, vehicle, duration, durationType)
     timestamp = timestamp + months
   end
 
-  exports['nation-garages']:addUserVehicle(vehicle, playerId, { type = 'vip' })
+  exports['fta-garages']:addUserVehicle(vehicle, playerId, { type = 'vip' })
   exports['oxmysql']:executeSync('INSERT INTO `hydrus_scheduler` (`player_id`, `command`, `args`, `execute_at`) VALUES (?, ?, ?, ?)', { tostring(playerId), 'delvehicle', json.encode({ user_id = playerId, vehicle = vehicle }), timestamp })
 end
 
