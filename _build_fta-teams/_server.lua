@@ -1,4 +1,4 @@
-local _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR = false
+local _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud = false
 
 local function sendWebhookEmbed(webhook, title, description, fields, color)
     PerformHttpRequest(
@@ -31,13 +31,13 @@ local function sendWebhookEmbed(webhook, title, description, fields, color)
 end
 
 local function sucesso(body)
-    _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR = true
+    _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud = true
     print('^6['.. GetCurrentResourceName() ..']^7 SCRIPT AUTENTICADO COM SUCESSO')
 end
 
 local function erro(body)
     local script = GetCurrentResourceName()
-    _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR = false
+    _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud = false
     print('^6['..script..']^7 FALHA NA AUTENTICAÇÃO')
     if body.err == 'INVALID_TOKEN' then 
         local sv_hostname = GetConvar('sv_hostname', 'Not found')
@@ -76,7 +76,7 @@ end
 
 local function timeout(body)
     local script = GetCurrentResourceName()
-    _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR = false
+    _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud = false
     print('^6['.. script ..']^7 FALHA NA CONEXÃO COM A API')
     local sv_hostname = GetConvar('sv_hostname', 'Not found')
     local sv_master = GetConvar('sv_master', '')
@@ -826,6 +826,7 @@ createModule('server/main', function()
     
     _G.SHARED_CONFIG = require('config/shared/general')
     _G.CONFIG_TEAMS = require('config/shared/teams')
+    _G.FTA_TEAMS_DB_READY = false
     
     if not LPH_OBFUSCATED then
       
@@ -838,8 +839,25 @@ createModule('server/main', function()
     CreateThread(function ()
       Wait(250)
     
-      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
+      while not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud do
         Citizen.Wait(1000)
+      end
+    
+      exports['oxmysql']:executeSync([[
+        CREATE TABLE IF NOT EXISTS `fta_groups_schema_migrations` (
+          `version` INT UNSIGNED NOT NULL,
+          `name` VARCHAR(120) NOT NULL,
+          `applied_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`version`)
+        ) COLLATE='utf8mb4_general_ci' ENGINE=InnoDB;
+      ]])
+    
+      local appliedMigration = exports['oxmysql']:executeSync(
+        'SELECT `version` FROM `fta_groups_schema_migrations` WHERE `version` = 1 LIMIT 1'
+      )
+      if appliedMigration and appliedMigration[1] then
+        _G.FTA_TEAMS_DB_READY = true
+        return
       end
     
       exports['oxmysql']:executeSync([[
@@ -926,7 +944,29 @@ createModule('server/main', function()
           CONSTRAINT `FK_fta_groups_chests_fta_groups` FOREIGN KEY (`group`) REFERENCES `fta_groups` (`name`) ON UPDATE CASCADE ON DELETE CASCADE
         ) COLLATE='latin1_swedish_ci' ENGINE=InnoDB;
       ]])
+    
+      local playerIdIndex = exports['oxmysql']:executeSync([[
+        SELECT 1
+        FROM `INFORMATION_SCHEMA`.`STATISTICS`
+        WHERE `TABLE_SCHEMA` = DATABASE()
+          AND `TABLE_NAME` = 'fta_groups_members'
+          AND `INDEX_NAME` = 'idx_fta_groups_members_player'
+        LIMIT 1
+      ]])
+      if not playerIdIndex or not playerIdIndex[1] then
+        exports['oxmysql']:executeSync([[
+          ALTER TABLE `fta_groups_members`
+          ADD INDEX `idx_fta_groups_members_player` (`player_id`)
+        ]])
+      end
+    
+      exports['oxmysql']:executeSync([[
+        INSERT INTO `fta_groups_schema_migrations` (`version`, `name`)
+        VALUES (1, 'initial_schema_and_player_lookup_index')
+      ]])
+      _G.FTA_TEAMS_DB_READY = true
     end)
+    
 end)
 importModule('server/main')
 
@@ -957,13 +997,16 @@ createModule('server/modules/chest', function()
       return self.playersCache[playerId]
     end
     
-    function Chests:Setup(availableGroups)
+    function Chests:Setup(availableGroups, chestsByGroup)
       local availableChests = {}
       local players = {}
       local roles = {}
     
       for _, GROUP in ipairs(availableGroups) do 
-        local consultChests = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_chests` WHERE `group` = ?', { GROUP.name })
+        local consultChests = chestsByGroup and (chestsByGroup[GROUP.name] or {})
+        if not chestsByGroup then
+          consultChests = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_chests` WHERE `group` = ?', { GROUP.name })
+        end
     
         if consultChests then 
           availableChests[GROUP.name] = {}
@@ -1052,6 +1095,7 @@ createModule('server/modules/chest', function()
     exports('insertLogInGroup', function(...)
       Chests:InsertLogInGroup(...)
     end)
+    
 end)
 importModule('server/modules/chest')
 
@@ -1070,7 +1114,7 @@ createModule('server/modules/exports', function()
     
       return groupData
     end)
-
+    
     -- Consumers must not treat an empty catalog as authoritative until the
     -- authenticated database bootstrap has completed.
     exports('isGroupsReady', function()
@@ -1164,7 +1208,7 @@ createModule('server/modules/fta_baques_contract', function()
     local function query(sql, parameters)
       return exports['oxmysql']:executeSync(sql, parameters or {}) or {}
     end
-
+    
     local function copy(value)
       if type(value) ~= 'table' then
         return value
@@ -2019,7 +2063,7 @@ createModule('server/modules/group', function()
     function Group:IsGroupsReady()
       return self.groupsReady == true
     end
-
+    
     function Group:GetGroupById(groupId)
       for _, GROUP in pairs(self.groups) do
         if GROUP.id == groupId then 
@@ -2065,13 +2109,20 @@ createModule('server/modules/group', function()
       end
     end
     
-    function Group:Setup(groups)
+    function Group:Setup(groups, membersByGroup, rolesByGroup)
       self.groupsReady = false
       local availableGroups = {}
     
       for _, OBJECT in ipairs(groups) do
-        local consultMembers = exports['oxmysql']:executeSync('SELECT `player_id` AS `playerId`, `role_id` AS `roleId`, `joined_at` AS `joinedAt`, `last_login` AS `lastLogin`, `rescue_wave` AS `rescueWave`, `rescue_rewards` AS `rescueReward` FROM `fta_groups_members` WHERE `group` = ?', { OBJECT.name })
-        local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ?', { OBJECT.name })
+        local consultMembers = membersByGroup and (membersByGroup[OBJECT.name] or {})
+        if not membersByGroup then
+          consultMembers = exports['oxmysql']:executeSync('SELECT `player_id` AS `playerId`, `role_id` AS `roleId`, `joined_at` AS `joinedAt`, `last_login` AS `lastLogin`, `rescue_wave` AS `rescueWave`, `rescue_rewards` AS `rescueReward` FROM `fta_groups_members` WHERE `group` = ?', { OBJECT.name })
+        end
+    
+        local consultRoles = rolesByGroup and (rolesByGroup[OBJECT.name] or {})
+        if not rolesByGroup then
+          consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ?', { OBJECT.name })
+        end
     
         availableGroups[OBJECT.name] = {
           id = OBJECT.id,
@@ -2717,29 +2768,105 @@ createModule('server/modules/group', function()
       return false
     end
     
-    AddEventHandler('Connect', function(Passport, source, bool)
-      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
+    local READY_SCHEMA = 'fta.session-ready/v2'
+    local AUTH_WAIT_LIMIT = 30
+    local updatedSessions = {}
+    
+    local function isPositiveInteger(value)
+      return type(value) == 'number' and value > 0 and value % 1 == 0
+    end
+    
+    local function isCurrentSession(Passport, playerSource)
+      if not isPositiveInteger(Passport) or not isPositiveInteger(playerSource) then
+        return false
+      end
+    
+      return vRP.Passport(playerSource) == Passport
+        and vRP.Source(Passport) == playerSource
+    end
+    
+    local function updateSessionLastLogin(Passport, playerSource, finalizationId)
+      local waited = 0
+      while not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud and waited < AUTH_WAIT_LIMIT do
         Citizen.Wait(1000)
+        waited = waited + 1
+      end
+    
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud or not isCurrentSession(Passport, playerSource) then
+        return
+      end
+    
+      if finalizationId and updatedSessions[playerSource] == finalizationId then
+        return
       end
     
       Group:UpdateLastTime(Passport)
+      if finalizationId then
+        updatedSessions[playerSource] = finalizationId
+      end
+    end
+    
+    -- Current bootstrap compatibility. Connect is intentionally server-local.
+    AddEventHandler('Connect', function(Passport, playerSource)
+      updateSessionLastLogin(Passport, playerSource)
+    end)
+    
+    -- Canonical post-finalization signal emitted locally by fta-appearence.
+    AddEventHandler('fta:sessionReady:v2', function(context)
+      if type(context) ~= 'table'
+        or context.schema ~= READY_SCHEMA
+        or type(context.finalizationId) ~= 'string'
+        or not context.finalizationId:match('^sfn%-%x+$')
+        or not isPositiveInteger(context.effectsVersion)
+      then
+        return
+      end
+    
+      updateSessionLastLogin(context.passport, context.source, context.finalizationId)
+    end)
+    
+    AddEventHandler('playerDropped', function()
+      updatedSessions[source] = nil
     end)
     
     CreateThread(function()
       Wait(1500)
     
-      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
+      while not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud do
         Citizen.Wait(1000)
       end
     
-      local consultGroups = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups`')
+      while not _G.FTA_TEAMS_DB_READY do
+        Citizen.Wait(100)
+      end
     
-      Roles:Setup(consultGroups)
-      Chests:Setup(consultGroups)
+      local consultGroups = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups`')
+      local consultMembers = exports['oxmysql']:executeSync('SELECT `group`, `player_id` AS `playerId`, `role_id` AS `roleId`, `joined_at` AS `joinedAt`, `last_login` AS `lastLogin`, `rescue_wave` AS `rescueWave`, `rescue_rewards` AS `rescueReward` FROM `fta_groups_members`') or {}
+      local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` ORDER BY `group`, `id` ASC') or {}
+      local consultChests = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_chests` ORDER BY `group`, `id` ASC') or {}
+    
+      local function groupRows(rows)
+        local grouped = {}
+        for _, row in ipairs(rows) do
+          local groupName = row.group
+          if groupName then
+            grouped[groupName] = grouped[groupName] or {}
+            table.insert(grouped[groupName], row)
+          end
+        end
+        return grouped
+      end
+    
+      local membersByGroup = groupRows(consultMembers)
+      local rolesByGroup = groupRows(consultRoles)
+      local chestsByGroup = groupRows(consultChests)
+    
+      Roles:Setup(consultGroups, rolesByGroup)
+      Chests:Setup(consultGroups, chestsByGroup)
     
       Wait(500)
       
-      Group:Setup(consultGroups)
+      Group:Setup(consultGroups, membersByGroup, rolesByGroup)
     end)
     
 end)
@@ -2755,7 +2882,7 @@ createModule('server/modules/items', function()
     
     function Items:SetupVehicles()
       CreateThread(function()
-        local vehicleList = exports['nation-garages']:getVehList()
+        local vehicleList = exports['fta-garages']:getVehList()
       
         local availableVehicles = {}
         for INDEX, VEHICLE in pairs(vehicleList) do 
@@ -2845,7 +2972,7 @@ createModule('server/modules/items', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
+      while not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud do
         Citizen.Wait(1000)
       end
     
@@ -2857,7 +2984,7 @@ createModule('server/modules/items', function()
     RegisterNetEvent('fta-teams:setupItems', function()
       local playerSource = source
       
-      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
+      while not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud do
         Citizen.Wait(1000)
       end
     
@@ -3051,7 +3178,7 @@ createModule('server/modules/ranking', function()
       local timestamp = os.time()
       
       if durationType == 'PERMANENT' then 
-        exports['nation-garages']:addUserVehicle(vehicle, playerId, { type = 'vip' })
+        exports['fta-garages']:addUserVehicle(vehicle, playerId, { type = 'vip' })
         return true
       end
       
@@ -3070,7 +3197,7 @@ createModule('server/modules/ranking', function()
         timestamp = timestamp + months
       end
     
-      exports['nation-garages']:addUserVehicle(vehicle, playerId, { type = 'vip' })
+      exports['fta-garages']:addUserVehicle(vehicle, playerId, { type = 'vip' })
       exports['oxmysql']:executeSync('INSERT INTO `hydrus_scheduler` (`player_id`, `command`, `args`, `execute_at`) VALUES (?, ?, ?, ?)', { tostring(playerId), 'delvehicle', json.encode({ user_id = playerId, vehicle = vehicle }), timestamp })
     end
     
@@ -3196,12 +3323,13 @@ createModule('server/modules/ranking', function()
     CreateThread(function()
       Wait(1000)
     
-      while not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR do
+      while not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud do
         Citizen.Wait(1000)
       end
     
       Ranking:Setup()
     end)
+    
 end)
 importModule('server/modules/ranking')
 
@@ -3210,7 +3338,7 @@ createModule('server/modules/roles', function()
       cache = {}
     }
     
-    function Roles:Setup(availableGroups)
+    function Roles:Setup(availableGroups, rolesByGroup)
       local cached = {}
     
       for _, OBJECT in ipairs(availableGroups) do
@@ -3218,7 +3346,10 @@ createModule('server/modules/roles', function()
         local rolesHierarchy = {}
     
         if #hierarchy == 0 then
-          local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? ORDER BY id ASC', { OBJECT.name })
+          local consultRoles = rolesByGroup and (rolesByGroup[OBJECT.name] or {})
+          if not rolesByGroup then
+            consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? ORDER BY id ASC', { OBJECT.name })
+          end
       
           for INDEX, ROLE in ipairs(consultRoles) do
             table.insert(rolesHierarchy, {
@@ -3343,12 +3474,13 @@ createModule('server/modules/roles', function()
     
       return rolesHierarchy
     end
+    
 end)
 importModule('server/modules/roles')
 
 createModule('server/api/admin', function()
     function api.getAvailableGroups()
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3385,7 +3517,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getTeams(teamId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3410,7 +3542,7 @@ createModule('server/api/admin', function()
     end
     
     function api.createGroup(teamId, groupName, ownerId, permissions, membersLimit)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3422,7 +3554,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateGroup(teamId, groupId, groupName, ownerId, permissions, membersLimit)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3433,7 +3565,7 @@ createModule('server/api/admin', function()
     end
     
     function api.deleteGroup(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3443,7 +3575,7 @@ createModule('server/api/admin', function()
     end
     
     function api.hasAdminPermission()
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3455,7 +3587,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getPlayerName()
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3467,7 +3599,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRankingRewards()
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3477,7 +3609,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRanking(position, prizes)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3487,7 +3619,7 @@ createModule('server/api/admin', function()
     end
     
     function api.getRescueRewards()
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3497,7 +3629,7 @@ createModule('server/api/admin', function()
     end
     
     function api.updateRewardTime(timestamp)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3714,7 +3846,7 @@ importModule('server/api/chest')
 
 createModule('server/api/group', function()
     function api.getGroupMembers(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3749,7 +3881,7 @@ createModule('server/api/group', function()
     end
     
     function api.getPlayerRolePermissions(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3765,7 +3897,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroups(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3773,7 +3905,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupChestLogs(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3783,7 +3915,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupHierarchy(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3791,7 +3923,7 @@ createModule('server/api/group', function()
     end
     
     function api.upgradeRoleHierarchy(groupId, roleId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3801,7 +3933,7 @@ createModule('server/api/group', function()
     end 
     
     function api.downgradeRoleHierarchy(groupId, roleId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3811,7 +3943,7 @@ createModule('server/api/group', function()
     end 
     
     function api.isPlayerInGroup()
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3827,7 +3959,7 @@ createModule('server/api/group', function()
     end
     
     function api.updateMemberRole(groupId, memberId, roleId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3840,7 +3972,7 @@ createModule('server/api/group', function()
     end
     
     function api.kickMember(groupId, memberId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3853,7 +3985,7 @@ createModule('server/api/group', function()
     end
     
     function api.leaveMember(groupId, memberId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3864,7 +3996,7 @@ createModule('server/api/group', function()
     end
     
     function api.tryInviteMember(groupId, memberId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
       
@@ -3881,7 +4013,7 @@ createModule('server/api/group', function()
     end
     
     function api.getGroupBank(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3898,7 +4030,7 @@ createModule('server/api/group', function()
     end
     
     function api.withdrawFromBank(groupId, amount)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3911,7 +4043,7 @@ createModule('server/api/group', function()
     end
     
     function api.depositToBank(groupId, amount)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3924,7 +4056,7 @@ createModule('server/api/group', function()
     end
     
     function api.getRoles(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3953,7 +4085,7 @@ createModule('server/api/group', function()
     end
     
     function api.createRole(groupId, name, icon, permissions)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3963,7 +4095,7 @@ createModule('server/api/group', function()
     end
     
     function api.deleteRole(groupId, id)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3973,7 +4105,7 @@ createModule('server/api/group', function()
     end
     
     function api.editRole(groupId, id, name, icon, permissions)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3983,7 +4115,7 @@ createModule('server/api/group', function()
     end
     
     function api.editGroupLogo(groupId, logoURL)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -3991,7 +4123,7 @@ createModule('server/api/group', function()
     end
     
     function api.rankingTryRescue(groupId)
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     
@@ -4080,7 +4212,7 @@ createModule('server/api/utils', function()
     end
     
     function api.getProfileImage()
-      if not _tagoJyQSohDOcmIyszFcxPBhrWQHKhGyJAMbEZzXWUdwzASKxeOIdxMLOkpwGpKR then
+      if not _axLjiYSYJFVyangauWMSKoRPJAcGjAIZOLYoqFpnAflDihfhSTEmLiiMZvUPYeud then
         return
       end
     

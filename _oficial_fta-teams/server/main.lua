@@ -7,6 +7,7 @@ apiClient = Tunnel.getInterface(GetCurrentResourceName())
 
 _G.SHARED_CONFIG = require('config/shared/general')
 _G.CONFIG_TEAMS = require('config/shared/teams')
+_G.FTA_TEAMS_DB_READY = false
 
 if not LPH_OBFUSCATED then
   __isAuth__ = true
@@ -21,6 +22,23 @@ CreateThread(function ()
 
   while not __isAuth__ do
     Citizen.Wait(1000)
+  end
+
+  exports['oxmysql']:executeSync([[
+    CREATE TABLE IF NOT EXISTS `fta_groups_schema_migrations` (
+      `version` INT UNSIGNED NOT NULL,
+      `name` VARCHAR(120) NOT NULL,
+      `applied_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`version`)
+    ) COLLATE='utf8mb4_general_ci' ENGINE=InnoDB;
+  ]])
+
+  local appliedMigration = exports['oxmysql']:executeSync(
+    'SELECT `version` FROM `fta_groups_schema_migrations` WHERE `version` = 1 LIMIT 1'
+  )
+  if appliedMigration and appliedMigration[1] then
+    _G.FTA_TEAMS_DB_READY = true
+    return
   end
 
   exports['oxmysql']:executeSync([[
@@ -107,4 +125,25 @@ CreateThread(function ()
       CONSTRAINT `FK_fta_groups_chests_fta_groups` FOREIGN KEY (`group`) REFERENCES `fta_groups` (`name`) ON UPDATE CASCADE ON DELETE CASCADE
     ) COLLATE='latin1_swedish_ci' ENGINE=InnoDB;
   ]])
+
+  local playerIdIndex = exports['oxmysql']:executeSync([[
+    SELECT 1
+    FROM `INFORMATION_SCHEMA`.`STATISTICS`
+    WHERE `TABLE_SCHEMA` = DATABASE()
+      AND `TABLE_NAME` = 'fta_groups_members'
+      AND `INDEX_NAME` = 'idx_fta_groups_members_player'
+    LIMIT 1
+  ]])
+  if not playerIdIndex or not playerIdIndex[1] then
+    exports['oxmysql']:executeSync([[
+      ALTER TABLE `fta_groups_members`
+      ADD INDEX `idx_fta_groups_members_player` (`player_id`)
+    ]])
+  end
+
+  exports['oxmysql']:executeSync([[
+    INSERT INTO `fta_groups_schema_migrations` (`version`, `name`)
+    VALUES (1, 'initial_schema_and_player_lookup_index')
+  ]])
+  _G.FTA_TEAMS_DB_READY = true
 end)

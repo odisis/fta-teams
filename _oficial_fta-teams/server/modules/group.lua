@@ -65,13 +65,20 @@ function Group:UpdateMemberRescue(groupId, playerId, rescueWave)
   end
 end
 
-function Group:Setup(groups)
+function Group:Setup(groups, membersByGroup, rolesByGroup)
   self.groupsReady = false
   local availableGroups = {}
 
   for _, OBJECT in ipairs(groups) do
-    local consultMembers = exports['oxmysql']:executeSync('SELECT `player_id` AS `playerId`, `role_id` AS `roleId`, `joined_at` AS `joinedAt`, `last_login` AS `lastLogin`, `rescue_wave` AS `rescueWave`, `rescue_rewards` AS `rescueReward` FROM `fta_groups_members` WHERE `group` = ?', { OBJECT.name })
-    local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ?', { OBJECT.name })
+    local consultMembers = membersByGroup and (membersByGroup[OBJECT.name] or {})
+    if not membersByGroup then
+      consultMembers = exports['oxmysql']:executeSync('SELECT `player_id` AS `playerId`, `role_id` AS `roleId`, `joined_at` AS `joinedAt`, `last_login` AS `lastLogin`, `rescue_wave` AS `rescueWave`, `rescue_rewards` AS `rescueReward` FROM `fta_groups_members` WHERE `group` = ?', { OBJECT.name })
+    end
+
+    local consultRoles = rolesByGroup and (rolesByGroup[OBJECT.name] or {})
+    if not rolesByGroup then
+      consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ?', { OBJECT.name })
+    end
 
     availableGroups[OBJECT.name] = {
       id = OBJECT.id,
@@ -717,12 +724,65 @@ function Group:GetPlayerGroupById(playerId)
   return false
 end
 
-AddEventHandler('Connect', function(Passport, source, bool)
-  while not __isAuth__ do
+local READY_SCHEMA = 'fta.session-ready/v2'
+local AUTH_WAIT_LIMIT = 30
+local updatedSessions = {}
+
+local function isPositiveInteger(value)
+  return type(value) == 'number' and value > 0 and value % 1 == 0
+end
+
+local function isCurrentSession(Passport, playerSource)
+  if not isPositiveInteger(Passport) or not isPositiveInteger(playerSource) then
+    return false
+  end
+
+  return vRP.Passport(playerSource) == Passport
+    and vRP.Source(Passport) == playerSource
+end
+
+local function updateSessionLastLogin(Passport, playerSource, finalizationId)
+  local waited = 0
+  while not __isAuth__ and waited < AUTH_WAIT_LIMIT do
     Citizen.Wait(1000)
+    waited = waited + 1
+  end
+
+  if not __isAuth__ or not isCurrentSession(Passport, playerSource) then
+    return
+  end
+
+  if finalizationId and updatedSessions[playerSource] == finalizationId then
+    return
   end
 
   Group:UpdateLastTime(Passport)
+  if finalizationId then
+    updatedSessions[playerSource] = finalizationId
+  end
+end
+
+-- Current bootstrap compatibility. Connect is intentionally server-local.
+AddEventHandler('Connect', function(Passport, playerSource)
+  updateSessionLastLogin(Passport, playerSource)
+end)
+
+-- Canonical post-finalization signal emitted locally by fta-appearence.
+AddEventHandler('fta:sessionReady:v2', function(context)
+  if type(context) ~= 'table'
+    or context.schema ~= READY_SCHEMA
+    or type(context.finalizationId) ~= 'string'
+    or not context.finalizationId:match('^sfn%-%x+$')
+    or not isPositiveInteger(context.effectsVersion)
+  then
+    return
+  end
+
+  updateSessionLastLogin(context.passport, context.source, context.finalizationId)
+end)
+
+AddEventHandler('playerDropped', function()
+  updatedSessions[source] = nil
 end)
 
 CreateThread(function()
@@ -732,12 +792,35 @@ CreateThread(function()
     Citizen.Wait(1000)
   end
 
-  local consultGroups = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups`')
+  while not _G.FTA_TEAMS_DB_READY do
+    Citizen.Wait(100)
+  end
 
-  Roles:Setup(consultGroups)
-  Chests:Setup(consultGroups)
+  local consultGroups = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups`')
+  local consultMembers = exports['oxmysql']:executeSync('SELECT `group`, `player_id` AS `playerId`, `role_id` AS `roleId`, `joined_at` AS `joinedAt`, `last_login` AS `lastLogin`, `rescue_wave` AS `rescueWave`, `rescue_rewards` AS `rescueReward` FROM `fta_groups_members`') or {}
+  local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` ORDER BY `group`, `id` ASC') or {}
+  local consultChests = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_chests` ORDER BY `group`, `id` ASC') or {}
+
+  local function groupRows(rows)
+    local grouped = {}
+    for _, row in ipairs(rows) do
+      local groupName = row.group
+      if groupName then
+        grouped[groupName] = grouped[groupName] or {}
+        table.insert(grouped[groupName], row)
+      end
+    end
+    return grouped
+  end
+
+  local membersByGroup = groupRows(consultMembers)
+  local rolesByGroup = groupRows(consultRoles)
+  local chestsByGroup = groupRows(consultChests)
+
+  Roles:Setup(consultGroups, rolesByGroup)
+  Chests:Setup(consultGroups, chestsByGroup)
 
   Wait(500)
   
-  Group:Setup(consultGroups)
+  Group:Setup(consultGroups, membersByGroup, rolesByGroup)
 end)

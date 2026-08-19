@@ -12,13 +12,16 @@ function Chests:GetPlayerName(playerId)
   return self.playersCache[playerId]
 end
 
-function Chests:Setup(availableGroups)
+function Chests:Setup(availableGroups, chestsByGroup)
   local availableChests = {}
   local players = {}
   local roles = {}
 
   for _, GROUP in ipairs(availableGroups) do 
-    local consultChests = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_chests` WHERE `group` = ?', { GROUP.name })
+    local consultChests = chestsByGroup and (chestsByGroup[GROUP.name] or {})
+    if not chestsByGroup then
+      consultChests = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_chests` WHERE `group` = ?', { GROUP.name })
+    end
 
     if consultChests then 
       availableChests[GROUP.name] = {}

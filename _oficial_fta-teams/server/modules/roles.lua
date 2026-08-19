@@ -2,7 +2,7 @@ _G.Roles = {
   cache = {}
 }
 
-function Roles:Setup(availableGroups)
+function Roles:Setup(availableGroups, rolesByGroup)
   local cached = {}
 
   for _, OBJECT in ipairs(availableGroups) do
@@ -10,7 +10,10 @@ function Roles:Setup(availableGroups)
     local rolesHierarchy = {}
 
     if #hierarchy == 0 then
-      local consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? ORDER BY id ASC', { OBJECT.name })
+      local consultRoles = rolesByGroup and (rolesByGroup[OBJECT.name] or {})
+      if not rolesByGroup then
+        consultRoles = exports['oxmysql']:executeSync('SELECT * FROM `fta_groups_roles` WHERE `group` = ? ORDER BY id ASC', { OBJECT.name })
+      end
   
       for INDEX, ROLE in ipairs(consultRoles) do
         table.insert(rolesHierarchy, {
