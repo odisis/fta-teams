@@ -1,0 +1,15 @@
+/* Factual NUI interaction policy. Keep editable controls and functional drag/drop. */
+*, *::before, *::after {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+textarea,
+[contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"],
+[contenteditable=""] *, [contenteditable="true"] *, [contenteditable="plaintext-only"] * {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+img:not([draggable="true"]) {
+  -webkit-user-drag: none;
+}
